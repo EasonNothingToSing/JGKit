@@ -3,10 +3,14 @@ import tkinter
 import logging
 import re
 from GuiRender import View
+from functools import wraps
 
 
 class Control:
     def __init__(self, master, **kwargs):
+        # Stage machine flag
+        self.control_stage_machine = "disconnected"
+
         self._master = master
 
         # Main frame
@@ -78,16 +82,36 @@ class Control:
         self.log = View.Log(self.log_frame)
         self.log.pack(expand=True, fill=tkinter.BOTH)
 
-    def connect(self):
-        self.stage_label.enable()
-        self.auto_check.enable()
-        self.refresh_button.enable()
-        self.stop_button.enable()
-        self.play_button.disable()
+    def refresh(self):
+        pass
 
-    def disconnect(self):
+    def play(self):
+        pass
+
+    def stop(self):
         self.stage_label.disable()
         self.auto_check.disable()
         self.refresh_button.disable()
         self.stop_button.disable()
         self.play_button.enable()
+
+    def control_button_stage_machine(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if self.control_stage_machine == "disconnected":
+                if func.__name__ == "play":
+                    self.stage_label.enable()
+                    self.auto_check.enable()
+                    self.refresh_button.enable()
+                    self.stop_button.enable()
+                    self.play_button.disable()
+                    if func(self, *args, **kwargs):
+                        self
+
+
+            elif self.control_stage_machine == "connected":
+                pass
+            elif self.control_stage_machine == "refreshed":
+                pass
+            else:
+                logging.error("Undefine stage machine parameter")
