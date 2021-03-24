@@ -6,8 +6,8 @@ from PIL import Image, ImageTk
 UI_TITLE = "JGKit"
 
 UI_FONT_SIZE_PIXEL = "15"
-UI_TEXT_PADX = "4"
-UI_TEXT_PADY = "2"
+UI_TEXT_PADX = "10"
+UI_TEXT_PADY = "4"
 
 UI_TOTAL_WIDTH = "1600"
 UI_TOTAL_HEIGHT = "1200"
@@ -15,13 +15,13 @@ UI_TOTAL_HEIGHT = "1200"
 UI_CONTROL_FRAME_WIDTH = UI_TOTAL_WIDTH
 UI_CONTROL_FRAME_HEIGHT = "50"
 
-UI_CONTROL_BUTTON_FRAME_WIDTH = "800"
+UI_CONTROL_BUTTON_FRAME_WIDTH = "1400"
 UI_CONTROL_BUTTON_FRAME_HEIGHT = UI_CONTROL_FRAME_HEIGHT
 
-UI_CONTROL_DESCRIPTION_FRAME_WIDTH = "800"
+UI_CONTROL_DESCRIPTION_FRAME_WIDTH = "200"
 UI_CONTROL_DESCRIPTION_FRAME_HEIGHT = UI_CONTROL_FRAME_HEIGHT
 
-UI_CONTROL_DESCRIPTION_WIDTH = "800"
+UI_CONTROL_DESCRIPTION_WIDTH = "200"
 UI_CONTROL_DESCRIPTION_HEIGHT = UI_CONTROL_FRAME_HEIGHT
 
 UI_DISPLAY_TREE_WIDTH = "800"
@@ -47,27 +47,42 @@ DARCULA_BUTTON_HOVER = "#4C5052"
 UI_FONT = ("Helvetica", -int(UI_FONT_SIZE_PIXEL))
 
 
-class MainFrame(tkinter.Frame):
+class BaseFrame(tkinter.Frame):
     def __init__(self, master, **kwargs):
-        super(MainFrame, self).__init__(master, width=UI_TOTAL_WIDTH, height=UI_TOTAL_HEIGHT, **kwargs, bg=DARCULA_DEFAULT_BG)
+        super(BaseFrame, self).__init__(master, highlightbackground=DARCULA_DEFAULT_BG, highlightcolor=DARCULA_DEFAULT_BG, bd="0", relief=tkinter.FLAT, **kwargs)
+
+
+class MainFrame(BaseFrame):
+    def __init__(self, master, **kwargs):
+        super(MainFrame, self).__init__(master, width=UI_TOTAL_WIDTH, height=UI_TOTAL_HEIGHT,  bg=DARCULA_DEFAULT_BG, **kwargs)
 
 
 # "<MouseWheel>"
 class EntryPopup(tkinter.Entry):
     def __init__(self, master, text, **kwargs):
         super(EntryPopup, self).__init__(master, exportselection=False, fg=DARCULA_DEFAULT_FG, bg=DARCULA_DEFAULT_BG,
-                                         highlightbackground=DARCULA_DEFAULT_SELECT_BD, highlightthickness="4",
-                                         highlightcolor=DARCULA_DEFAULT_SELECT_BD, font=UI_FONT, **kwargs)
+                                         highlightbackground=DARCULA_DEFAULT_SELECT_BD, highlightthickness="2",
+                                         highlightcolor=DARCULA_DEFAULT_SELECT_BD, font=UI_FONT, justify=tkinter.CENTER, width="250", **kwargs)
         self.insert(0, text)
         self.focus_force()
+        self.bind("<Escape>", lambda *ignore: self.destroy())
+        self.bind("<Control-a>", self.select_all)
+        self.bind_all("<MouseWheel>", lambda *ignore: self.destroy())
+
+    def select_all(self, *ignore):
+        ''' Set selection on the whole text '''
+        self.selection_range(0, 'end')
+
+        # returns 'break' to interrupt default key-bindings
+        return 'break'
 
 
-class ControlFrame(tkinter.Frame):
+class ControlFrame(BaseFrame):
     def __init__(self, master, **kwargs):
         super(ControlFrame, self).__init__(master, width=UI_CONTROL_FRAME_WIDTH, height=UI_CONTROL_FRAME_HEIGHT, bg=DARCULA_DEFAULT_BG, **kwargs)
 
 
-class DescriptionFrame(tkinter.Frame):
+class DescriptionFrame(BaseFrame):
     def __init__(self, master, **kwargs):
         super(DescriptionFrame, self).__init__(master, width=UI_CONTROL_DESCRIPTION_FRAME_WIDTH, height=UI_CONTROL_DESCRIPTION_FRAME_HEIGHT, **kwargs)
 
@@ -78,11 +93,18 @@ class DescriptionMessage(tkinter.Text):
                                                  width=int(UI_CONTROL_DESCRIPTION_WIDTH)//int(UI_FONT_SIZE_PIXEL),
                                                  height=int(UI_CONTROL_DESCRIPTION_HEIGHT)//int(UI_FONT_SIZE_PIXEL),
                                                  bg=DARCULA_DEFAULT_BG, font=UI_FONT, padx=UI_TEXT_PADX,
-                                                 pady=UI_TEXT_PADY, fg=DARCULA_DEFAULT_FG, state=tkinter.DISABLED,
+                                                 pady=UI_TEXT_PADY, fg=DARCULA_DEFAULT_FG,
                                                  **kwargs)
+        self.bind("<Key>", self._disable_key)
+
+    def _disable_key(self, event):
+        if event.state == 12 and event.keysym == 'c':
+            return
+        else:
+            return 'break'
 
 
-class ButtonFrame(tkinter.Frame):
+class ButtonFrame(BaseFrame):
     def __init__(self, master, **kwargs):
         super(ButtonFrame, self).__init__(master, width=UI_CONTROL_BUTTON_FRAME_WIDTH, height=UI_CONTROL_BUTTON_FRAME_HEIGHT, bg=DARCULA_DEFAULT_BG, **kwargs)
 
@@ -197,6 +219,7 @@ class DarculaCheckButton(tkinter.Checkbutton):
 class AutoCheck(DarculaCheckButton):
     def __init__(self, master, **kwargs):
         super(AutoCheck, self).__init__(master, onvalue="auto", offvalue="bluntness", **kwargs)
+        self.deselect()
         self.disable()
 
     def enable(self):
@@ -218,20 +241,20 @@ class GraySeparatorH(ttk.Separator):
         super(GraySeparatorH, self).__init__(master, orient=tkinter.HORIZONTAL, **kwargs)
 
 
-class TreeFrame(tkinter.Frame):
+class TreeFrame(BaseFrame):
     def __init__(self, master, **kwargs):
         super(TreeFrame, self).__init__(master, width=UI_TOTAL_WIDTH, height=UI_TOTAL_HEIGHT, bg=DARCULA_DEFAULT_BG, **kwargs)
 
 
-class DisplayTreeFrame(tkinter.Frame):
+class DisplayTreeFrame(BaseFrame):
     def __init__(self, master, **kwargs):
         super(DisplayTreeFrame, self).__init__(master, width=UI_DISPLAY_TREE_WIDTH, height=UI_DISPLAY_TREE_HEIGHT, bg=DARCULA_DEFAULT_BG, **kwargs)
 
 
 class DisplayTree(ttk.Treeview):
-    def __init__(self, master, **kwargs):
-        self._top_columns = ("Name", "Address", "Field", "Property")
-        self._top_columns_width = ("250", "200", "200", "150")
+    def __init__(self, master, top_columns, top_columns_width, **kwargs):
+        self._top_columns = top_columns
+        self._top_columns_width = top_columns_width
         super(DisplayTree, self).__init__(master, columns=self._top_columns[1:], height=int(UI_DISPLAY_TREE_HEIGHT)//int(UI_FONT_SIZE_PIXEL)-UI_DISPLAY_TREE_MARGIN, **kwargs)
 
         # Edit the heading
@@ -243,15 +266,15 @@ class DisplayTree(ttk.Treeview):
             self.column(text, width=width, minwidth="25", anchor="center")
 
 
-class ModifyTreeFrame(tkinter.Frame):
+class ModifyTreeFrame(BaseFrame):
     def __init__(self, master, **kwargs):
         super(ModifyTreeFrame, self).__init__(master, width=UI_DISPLAY_TREE_WIDTH, height=UI_DISPLAY_TREE_HEIGHT, bg=DARCULA_DEFAULT_BG, **kwargs)
 
 
 class ModifyTree(ttk.Treeview):
-    def __init__(self, master, **kwargs):
-        self._top_columns = ("Name", "Address | Field", "Property", "Value")
-        self._top_columns_width = ("250", "200", "100", "250")  # name, address, prop, value
+    def __init__(self, master, _top_columns, _top_columns_width, **kwargs):
+        self._top_columns = _top_columns
+        self._top_columns_width = _top_columns_width
         super(ModifyTree, self).__init__(master, columns=self._top_columns[1:], height=int(UI_DISPLAY_TREE_HEIGHT)//int(UI_FONT_SIZE_PIXEL)-UI_DISPLAY_TREE_MARGIN, **kwargs)
 
         # Edit the heading
@@ -263,12 +286,12 @@ class ModifyTree(ttk.Treeview):
             self.column(text, width=width, minwidth="25", anchor="center")
 
 
-class DebugFrame(tkinter.Frame):
+class DebugFrame(BaseFrame):
     def __init__(self, master, **kwargs):
         super(DebugFrame, self).__init__(master, width=UI_DEBUG_FRAME_WIDTH, height=UI_DEBUG_FRAME_HEIGHT, **kwargs)
 
 
-class CommanderFrame(tkinter.Frame):
+class CommanderFrame(BaseFrame):
     def __init__(self, master, **kwargs):
         super(CommanderFrame, self).__init__(master, width=UI_COMMANDER_FRAME_WIDHT, height=UI_COMMANDER_FRAME_HEIGHT, bg=DARCULA_DEFAULT_BG, **kwargs)
 
@@ -281,10 +304,11 @@ class Commander(tkinter.Text):
                                         bg=DARCULA_DEFAULT_BG, font=UI_FONT, padx=UI_TEXT_PADX,
                                         pady=UI_TEXT_PADY, fg=DARCULA_DEFAULT_FG, highlightthickness="3",
                                         highlightcolor=DARCULA_DEFAULT_SELECT_BD,
+                                        highlightbackground=DARCULA_DEFAULT_BG,
                                         insertbackground=DARCULA_DEFAULT_FG, **kwargs)
 
 
-class LogFrame(tkinter.Frame):
+class LogFrame(BaseFrame):
     def __init__(self, master, **kwargs):
         super(LogFrame, self).__init__(master, width=UI_LOG_FRAME_WIDHT, height=UI_LOG_FRAME_HEIGHT, bg=DARCULA_DEFAULT_BG, **kwargs)
 
@@ -294,7 +318,15 @@ class Log(tkinter.Text):
         super(Log, self).__init__(master, width=int(UI_LOG_FRAME_WIDHT)//int(UI_FONT_SIZE_PIXEL),
                                   height=int(UI_LOG_FRAME_HEIGHT)//int(UI_FONT_SIZE_PIXEL),bg=DARCULA_DEFAULT_BG,
                                   font=UI_FONT, padx=UI_TEXT_PADX, pady=UI_TEXT_PADY, fg=DARCULA_DEFAULT_FG,
-                                  state=tkinter.DISABLED, **kwargs)
+                                  **kwargs)
+
+        self.bind("<Key>", self._disable_key)
+
+    def _disable_key(self, event):
+        if event.state == 12 and event.keysym == 'c':
+            return
+        else:
+            return 'break'
 
 
 if __name__ == "__main__":

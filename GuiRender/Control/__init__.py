@@ -1,10 +1,12 @@
 from PIL import Image, ImageTk
 import tkinter
+from tkinter import ttk
 import logging
 import re
 from GuiRender import View
 from GuiRender.Model import Excel2Dict
 from GuiRender.Model import SWDJlink
+from GuiRender.Model import WidgetLogger
 from bitstring import BitArray
 from functools import wraps
 
@@ -15,6 +17,39 @@ class Control:
         self.control_stage_machine = "disconnected"
 
         self._master = master
+
+        # Style *************************************************************************************
+        style = ttk.Style(self._master)
+        style.theme_use("clam")
+        style.configure("Treeview", rowheight=str(int(View.UI_FONT_SIZE_PIXEL) + int(View.UI_DISPLAY_TREE_MARGIN)*1.5), fieldbackground=View.DARCULA_DEFAULT_BG, background=View.DARCULA_DEFAULT_BG, foreground=View.DARCULA_DEFAULT_FG, relief="flat", highlightbackground=View.DARCULA_DEFAULT_BG, highlightcolor=View.DARCULA_DEFAULT_BG)
+        style.configure("Treeview.Heading", background=View.DARCULA_DEFAULT_BG, foreground=View.DARCULA_DEFAULT_FG, relief="flat", highlightbackground=View.DARCULA_DEFAULT_BG, highlightcolor=View.DARCULA_DEFAULT_BG)
+        style.map("Treeview",
+                  background=[("disabled", View.DARCULA_DEFAULT_BG),
+                              ("selected", View.DARCULA_BUTTON_HOVER)
+                              ],
+
+                  foreground=[("disabled", View.DARCULA_DEFAULT_FG),
+                              ],
+
+                  relief=[('active', 'groove'),
+                          ('pressed', 'sunken')
+                          ],
+
+                  highlightbackground=[('disabled', View.DARCULA_DEFAULT_BG),
+                                       ],
+
+                  highlightcolor=[("disabled", View.DARCULA_DEFAULT_BG),
+                                  ],
+                  )
+        style.map("Treeview.Heading",
+                  background=[("disabled", View.DARCULA_DEFAULT_BG),
+                              ],
+
+                  foreground=[("disabled", View.DARCULA_DEFAULT_FG),
+                              ],
+                  )
+
+        # Style *************************************************************************************
 
         # Main frame
         self.master_frame = View.MainFrame(self._master)
@@ -40,8 +75,8 @@ class Control:
         self.stage_label.pack(side=tkinter.RIGHT, anchor="e", padx="4")
         View.GraySeparator(self.control_button_frame).pack(side=tkinter.RIGHT, anchor="e", pady="4", fill="y", padx="4")
 
-        self.auto_check_value = tkinter.IntVar()
-        self.auto_check = View.AutoCheck(self.control_button_frame, variable=self.auto_check_value, command=self.auto_refresh)
+        self.auto_check_value = tkinter.StringVar()
+        self.auto_check = View.AutoCheck(self.control_button_frame, variable=self.auto_check_value, command=self.auto_refresh, )
         self.auto_check.pack(side=tkinter.RIGHT, anchor="e", padx="4")
         self.refresh_button = View.RefreshButton(self.control_button_frame, command=self.refresh)
         self.refresh_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
@@ -54,23 +89,27 @@ class Control:
         self.play_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
         self.play_button.configure(command=self.play)
 
-        # View.GraySeparatorH(self.control_button_frame).pack(side=tkinter.BOTTOM, anchor="n")
-
         # Tree Frame
         self.tree_frame = View.TreeFrame(self.master_frame)
         self.tree_frame.pack(expand=True, fill=tkinter.BOTH, after=self.control_frame)
 
         # Display Tree
+        self._top_columns_d = ("Name", "Address", "Field", "Property")
+        self._top_columns_width_d = ("250", "200", "200", "150")
         self.display_tree_frame = View.DisplayTreeFrame(self.tree_frame)
         self.display_tree_frame.pack(expand=True, fill=tkinter.BOTH, side=tkinter.LEFT)
-        self.display_tree = View.DisplayTree(self.display_tree_frame)
+        self.display_tree = View.DisplayTree(self.display_tree_frame, self._top_columns_d, self._top_columns_width_d)
         self.display_tree.bind("<Double-1>", self._display_tree_double_click)
         self.display_tree.pack(expand=True, fill=tkinter.BOTH)
 
         # Modify Tree
+        self._top_columns_m = ("Name", "Address | Field", "Property", "Value")
+        self._top_columns_width_m = ("250", "200", "100", "250")  # name, address, prop, value
         self.modify_tree_frame = View.ModifyTreeFrame(self.tree_frame)
         self.modify_tree_frame.pack(expand=True, fill=tkinter.BOTH, side=tkinter.RIGHT)
-        self.modify_tree = View.ModifyTree(self.modify_tree_frame)
+        self.modify_tree = View.ModifyTree(self.modify_tree_frame, self._top_columns_m, self._top_columns_width_m)
+        self.modify_tree.bind("<Delete>", self._modify_tree_delete_keyboard)
+        self.modify_tree.bind("<Button-1>", self._modify_tree_popup_message)
         self.modify_tree.pack(expand=True, fill=tkinter.BOTH)
 
         # Debug Frame
@@ -88,6 +127,8 @@ class Control:
         self.log_frame.pack(expand=True, fill=tkinter.BOTH, side=tkinter.RIGHT)
         self.log = View.Log(self.log_frame)
         self.log.pack(expand=True, fill=tkinter.BOTH)
+
+        logging.getLogger().addHandler(WidgetLogger.WidgetLogger(self.log))
 
         # Refersh parameter
         self.refersh_time = 100  # 100ms
@@ -107,12 +148,13 @@ class Control:
 
         # Modify parameter
         self.tree_root = None
+        self._popup_entry_handler = None
 
         # Image
         self._image_tag = (
-            ImageTk.PhotoImage(Image.open("./.image/.treeview/device.png").resize((20, 20), Image.ANTIALIAS)),
-            ImageTk.PhotoImage(Image.open("./.image/.treeview/register.png").resize((20, 20), Image.ANTIALIAS)),
-            ImageTk.PhotoImage(Image.open("./.image/.treeview/field.png").resize((20, 20), Image.ANTIALIAS))
+            ImageTk.PhotoImage(Image.open("./.image/.treeview/device.png").resize((16, 16), Image.ANTIALIAS)),
+            ImageTk.PhotoImage(Image.open("./.image/.treeview/register.png").resize((16, 16), Image.ANTIALIAS)),
+            ImageTk.PhotoImage(Image.open("./.image/.treeview/field.png").resize((16, 16), Image.ANTIALIAS))
         )
 
         # SWD handler
@@ -314,7 +356,23 @@ class Control:
     def refresh(self):
         # Get item tree and read again
         # If trigger an error when read some address, then return False
+        logging.debug("<Refresh>")
+        self._sub_refresh()
         return True
+
+    def _sub_refresh(self, p=None):
+        items = self.modify_tree.get_children(p)
+        if not items:
+            return
+        for item in items:
+            dct = self.modify_tree.item(item)
+            if dct["tags"][0] != 0:
+                value = str(hex(self.read32_plus(self.parse_address(dct["values"][0]))))
+                values = dct["values"]
+                values[-1] = value
+                # Reload
+                self.modify_tree.item(item, values=values)
+            self._sub_refresh(item)
 
     @control_button_stage_machine
     def play(self):
@@ -336,22 +394,25 @@ class Control:
         # Depending the check button on or off
         # Register a timer into GUI event loop
         # Or unregister a timer
-        if self.auto_check_value:
+        value = self.auto_check_value.get()
+        if value == "auto":
             self.open_refresh_timer()
-        else:
+        elif value == "bluntness":
             self.close_refresh_timer()
+        else:
+            logging.error("Undefine value")
 
     def open_refresh_timer(self):
-        self._refresh_timer_handler = self._master.after(self.refersh_time, self.refresh_inspection)
+        self._refresh_timer_handler = self.auto_check.after(self.refersh_time, self.refresh_inspection)
 
     def close_refresh_timer(self):
-        self._master.after_cancel(self._refresh_timer_handler)
+        self.auto_check.after_cancel(self._refresh_timer_handler)
 
     def refresh_inspection(self):
         # refresh
         logging.info("[Callback]")
         if self.refresh():
-            self._refresh_timer_handler = self._master.after(self.refersh_time, self.refresh_inspection)
+            self._refresh_timer_handler = self.auto_check.after(self.refersh_time, self.refresh_inspection)
         else:
             self.close_refresh_timer()
             self.auto_check.deselect()
@@ -384,23 +445,6 @@ class Control:
             self._item_recursive(self.display_tree.get_children(item))
             # Restore the pointer
             self._mid_value_pointer = pointer_parent
-
-    @control_button_stage_machine
-    def _display_tree_double_click(self, event):
-        logging.info("<Double Click>")
-        # Get the double click information
-        item = self.display_tree.focus()
-        if not item:
-            return "break"
-
-        # Empty middle transmit value
-        self._mid_value = []
-        self._mid_value_pointer = self._mid_value
-        self._item_recursive((item, ))
-
-        self.modify_tree_render(self._mid_value, self.display_tree.item(item)["tags"][0])
-
-        return "break"
 
     def _get_mask(self, lengh):
         mask = BitArray(bin(0x1 << lengh))
@@ -442,3 +486,80 @@ class Control:
             # Have trouble
             return (mem32 >> int(tpl[1])) & self._get_mask(int(tpl[2]) - int(tpl[1]) + 1)
         return mem32
+
+    # *************************************************************************** Event
+    @control_button_stage_machine
+    def _display_tree_double_click(self, event):
+        logging.info("<Double Click>")
+        # Get the double click information
+        item = self.display_tree.focus()
+        if not item:
+            return "break"
+
+        # Empty middle transmit value
+        self._mid_value = []
+        self._mid_value_pointer = self._mid_value
+        self._item_recursive((item, ))
+
+        self.modify_tree_render(self._mid_value, self.display_tree.item(item)["tags"][0])
+
+        return "break"
+
+    def _modify_tree_delete_keyboard(self, event):
+        logging.info("<Delete Click>")
+        item = self.modify_tree.focus()
+        if item:
+            self.modify_tree.delete(item)
+        return "break"
+
+    def _modify_tree_popup_message(self, event):
+        logging.info("<One Click>")
+        # Destroy popup entry
+        if self._popup_entry_handler:
+            self._popup_entry_handler.destroy()
+            self._popup_entry_handler = None
+
+        # Clear message
+        self.control_description_message.delete('1.0', tkinter.END)
+
+        # where row and column was clicked on
+        rowid = self.modify_tree.identify_row(event.y)
+        column = self.modify_tree.identify_column(event.x)
+        if not rowid:
+            return
+
+        self.control_description_message.insert(tkinter.END, self.modify_tree.item(rowid, "tags")[1])
+        item = self.modify_tree.item(rowid)
+        logging.debug(item)
+
+        if column != "#3":
+            return
+        tags = item["tags"]
+        logging.debug("Click the row:%s, column:%s, tags:%s" % (rowid, column, str(tags)))
+        if tags[0] == "0":
+            return
+
+        x, y, width, height = self.modify_tree.bbox(rowid, column)
+        logging.debug("The location information --> x:%d, y:%d, width:%d, height:%d" % (x, y, width, height))
+
+        value = list(self.modify_tree.item(rowid, "values"))
+
+        self._popup_entry_handler = View.EntryPopup(self.modify_tree, value[-1])
+        # Get the total width
+        total_width = self.modify_tree.column("#0")["width"]
+        for i in self._top_columns_m[1:]:
+            total_width += self.modify_tree.column(i)["width"]
+
+        self._popup_entry_handler.place(x=x, y=y+height//2, anchor=tkinter.W, relwidth=self.modify_tree.column("Value")["width"]/total_width)
+
+        def _popup_entry_return(event):
+            nonlocal value, rowid
+            tpl = self.parse_address(value[0])
+
+            self.write32_plus(tpl, self._popup_entry_handler.get())
+            value[-1] = hex(self.read32_plus(tpl))
+            self.modify_tree.item(rowid, values=value)
+            self._popup_entry_handler.destroy()
+            self._popup_entry_handler = None
+
+        self._popup_entry_handler.bind("<Return>", _popup_entry_return)

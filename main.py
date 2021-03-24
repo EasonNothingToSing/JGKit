@@ -6,12 +6,12 @@ import logging
 
 if __name__ == "__main__":
     LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s - %(funcName)s - %(filename)s"
-    logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+    logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
 
     tk = tkinter.Tk()
     tk.title(View.UI_TITLE)
     tk.geometry(View.UI_TOTAL_WIDTH + "x" + View.UI_TOTAL_HEIGHT)
-    # tk.resizable(width=False, height=False)
+    tk.iconphoto(True, tkinter.PhotoImage(file="./.image/icon/exchange.png"))
     Control.Control(tk)
     tk.mainloop()
 
