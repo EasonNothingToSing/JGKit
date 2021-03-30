@@ -119,8 +119,15 @@ class Control:
         # Commander Frame
         self.commander_frame = View.CommanderFrame(self.debug_frame)
         self.commander_frame.pack(expand=True, fill=tkinter.BOTH, side=tkinter.LEFT)
+        self._commander_prefix = "JGKit: "
         self.commander = View.Commander(self.commander_frame)
+        self.commander.bind("<Key>", self._commander_keyboard)
+        self.commander.bind("<Return>", self._commander_entry)
         self.commander.pack(expand=True, fill=tkinter.BOTH)
+        self.commander.insert(tkinter.INSERT, self._commander_prefix)
+        self.commander_start = self.commander.index(tkinter.INSERT)
+        logging.debug("Initialize position: %s" % (self.commander_start, ))
+        self.commander.mark_set(tkinter.INSERT, self.commander_start)
 
         # Log Frame
         self.log_frame = View.LogFrame(self.debug_frame)
@@ -503,6 +510,24 @@ class Control:
 
         self.modify_tree_render(self._mid_value, self.display_tree.item(item)["tags"][0])
 
+        return "break"
+
+    # When any keyboard click, jump to the end of the character stream end
+    def _commander_keyboard(self, event):
+        # Commander position greater than insert position
+        if self.commander.compare(self.commander_start, ">=", tkinter.INSERT):
+            logging.debug("Change current position to the end of commander")
+            self.commander.mark_set("insert", tkinter.END)
+            if event.keysym == "BackSpace":
+                return "break"
+        else:
+            logging.debug("Insert position: %s" % (self.commander.index(tkinter.INSERT), ))
+
+    def _commander_entry(self, event):
+        logging.info("Get text: %s" % (self.commander.get(self.commander_start, tkinter.END), ))
+        self.commander.insert(tkinter.END, "\n%s" % (self._commander_prefix, ))
+        self.commander_start = self.commander.index(tkinter.INSERT)
+        logging.info("The new position: %s" % (self.commander_start, ))
         return "break"
 
     def _modify_tree_delete_keyboard(self, event):
