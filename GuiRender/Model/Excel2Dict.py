@@ -1,7 +1,6 @@
 import xlrd
 import logging
 
-
 __all__ = ["E2D", ]
 
 
@@ -15,6 +14,7 @@ class E2D:
     sheets = The excel sheets name or 'all' which include all excel sheets
     exclude = Which sheets you don't want
     """
+
     def __init__(self, excel, header, reheader, sheets='all', exclude=None):
         self._xlrd_handler = None
         self._dist = []
@@ -92,7 +92,7 @@ class E2D:
         # According to flow chart to indicate current row belong which level
         for rslt, ref, num in zip(rslt_list, self._ref_list, range(len(rslt_list))):
             if self._sub_state_machine_level_check(rslt, ref):
-                return num+1
+                return num + 1
 
     def _sub_state_machine_level_check(self, rslt, ref):
         ret = True
@@ -172,7 +172,8 @@ class E2D:
                 self._pointer_stack[level] = {}
 
                 # get item of each header and corresponding number
-                for dct, redct, num in zip(self.header, self.reheader, range(max(len(self.header), len(self.reheader)))):
+                for dct, redct, num in zip(self.header, self.reheader,
+                                           range(max(len(self.header), len(self.reheader)))):
                     # check each item Level
                     if level in dct["Level"]:
                         # add an item to corresponding dictionary
@@ -188,7 +189,7 @@ class E2D:
             if i == 0:
                 self._dist.append(self._pointer_stack[i])
             else:
-                self._pointer_stack[i-1]["Level"].append(self._pointer_stack[i])
+                self._pointer_stack[i - 1]["Level"].append(self._pointer_stack[i])
 
         return True
 

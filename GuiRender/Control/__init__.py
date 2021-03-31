@@ -21,8 +21,14 @@ class Control:
         # Style *************************************************************************************
         style = ttk.Style(self._master)
         style.theme_use("clam")
-        style.configure("Treeview", rowheight=str(int(View.UI_FONT_SIZE_PIXEL) + int(View.UI_DISPLAY_TREE_MARGIN)*1.5), fieldbackground=View.DARCULA_DEFAULT_BG, background=View.DARCULA_DEFAULT_BG, foreground=View.DARCULA_DEFAULT_FG, relief="flat", highlightbackground=View.DARCULA_DEFAULT_BG, highlightcolor=View.DARCULA_DEFAULT_BG)
-        style.configure("Treeview.Heading", background=View.DARCULA_DEFAULT_BG, foreground=View.DARCULA_DEFAULT_FG, relief="flat", highlightbackground=View.DARCULA_DEFAULT_BG, highlightcolor=View.DARCULA_DEFAULT_BG)
+        style.configure("Treeview",
+                        rowheight=str(int(View.UI_FONT_SIZE_PIXEL) + int(View.UI_DISPLAY_TREE_MARGIN) * 1.5),
+                        fieldbackground=View.DARCULA_DEFAULT_BG, background=View.DARCULA_DEFAULT_BG,
+                        foreground=View.DARCULA_DEFAULT_FG, relief="flat", highlightbackground=View.DARCULA_DEFAULT_BG,
+                        highlightcolor=View.DARCULA_DEFAULT_BG)
+        style.configure("Treeview.Heading", background=View.DARCULA_DEFAULT_BG, foreground=View.DARCULA_DEFAULT_FG,
+                        relief="flat", highlightbackground=View.DARCULA_DEFAULT_BG,
+                        highlightcolor=View.DARCULA_DEFAULT_BG)
         style.map("Treeview",
                   background=[("disabled", View.DARCULA_DEFAULT_BG),
                               ("selected", View.DARCULA_BUTTON_HOVER)
@@ -57,14 +63,14 @@ class Control:
 
         # Control Frame
         self.control_frame = View.ControlFrame(self.master_frame)
-        self.control_frame.pack(expand=True, fill=tkinter.X, side=tkinter.TOP, anchor="center")
+        self.control_frame.pack(expand=True, fill=tkinter.BOTH, side=tkinter.TOP, anchor="center")
 
         # Control description
         self.control_description_frame = View.DescriptionFrame(self.control_frame)
-        self.control_description_frame.pack(expand=True, fill=tkinter.X, side=tkinter.LEFT, anchor="center")
+        self.control_description_frame.pack(expand=True, fill=tkinter.BOTH, side=tkinter.LEFT, anchor="n")
 
         self.control_description_message = View.DescriptionMessage(self.control_description_frame)
-        self.control_description_message.pack(expand=True, fill=tkinter.X, anchor="center")
+        self.control_description_message.pack(expand=True, fill=tkinter.BOTH, anchor="n")
 
         # Control button frame
         self.control_button_frame = View.ButtonFrame(self.control_frame)
@@ -76,7 +82,8 @@ class Control:
         View.GraySeparator(self.control_button_frame).pack(side=tkinter.RIGHT, anchor="e", pady="4", fill="y", padx="4")
 
         self.auto_check_value = tkinter.StringVar()
-        self.auto_check = View.AutoCheck(self.control_button_frame, variable=self.auto_check_value, command=self.auto_refresh, )
+        self.auto_check = View.AutoCheck(self.control_button_frame, variable=self.auto_check_value,
+                                         command=self.auto_refresh)
         self.auto_check.pack(side=tkinter.RIGHT, anchor="e", padx="4")
         self.refresh_button = View.RefreshButton(self.control_button_frame, command=self.refresh)
         self.refresh_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
@@ -126,7 +133,7 @@ class Control:
         self.commander.pack(expand=True, fill=tkinter.BOTH)
         self.commander.insert(tkinter.INSERT, self._commander_prefix)
         self.commander_start = self.commander.index(tkinter.INSERT)
-        logging.debug("Initialize position: %s" % (self.commander_start, ))
+        logging.debug("Initialize position: %s" % (self.commander_start,))
         self.commander.mark_set(tkinter.INSERT, self.commander_start)
 
         # Log Frame
@@ -149,7 +156,8 @@ class Control:
         self.parent = ""
         self._find_indexs_pattern = re.compile(r"\[(?P<Number>[0-9]+)\]")
         self._locate_indexs_pattern = re.compile(r"<ARRAY_INDEX>")
-        self._address_field_pattern = re.compile(r"(?P<Address>0x[0-9a-fA-F]+)[\s\|]*(?P<Field0>[0-9]*):*(?P<Field1>[0-9]*)")
+        self._address_field_pattern = re.compile(
+            r"(?P<Address>0x[0-9a-fA-F]+)[\s\|]*(?P<Field0>[0-9]*):*(?P<Field1>[0-9]*)")
         self._mid_value = []
         self._mid_value_pointer = self._mid_value
 
@@ -227,7 +235,10 @@ class Control:
                 # Trigger error return False
                 if not value:
                     return
-            self._cur_iid = self.modify_tree.insert(self.parent, "end", iid=None, text=i["Name"], image=self._image_tag[self.level], values=(i["Address"], i["Property"], value), tags=(self.level, i["Description"]))
+            self._cur_iid = self.modify_tree.insert(self.parent, "end", iid=None, text=i["Name"],
+                                                    image=self._image_tag[self.level],
+                                                    values=(i["Address"], i["Property"], value),
+                                                    tags=(self.level, i["Description"]))
             if i["Level"]:
                 self.level += 1
                 self.parent = self._cur_iid
@@ -250,7 +261,10 @@ class Control:
             self.address_base_pointer = int(item["Address"], base=16)
             self.parent = ""
             self.level = 0
-            self.cur_iid = self.display_tree.insert(self.parent, "end", iid=None, text=item["Name"], image=self._image_tag[self.level], values=(hex(self.address_base_pointer), "", ""), tags=(self.level, "", self.address_base_pointer))
+            self.cur_iid = self.display_tree.insert(self.parent, "end", iid=None, text=item["Name"],
+                                                    image=self._image_tag[self.level],
+                                                    values=(hex(self.address_base_pointer), "", ""),
+                                                    tags=(self.level, "", self.address_base_pointer))
 
             self.parent = self.cur_iid
             self._display_register_render(item["Level"])
@@ -260,7 +274,10 @@ class Control:
             self.level = 1
             self.current_address = self.address_base_pointer + int(item["Address"], base=16)
             if not self._expand(item):
-                self.cur_iid = self.display_tree.insert(self.parent, "end", iid=None, text=item["Name"], image=self._image_tag[self.level], values=(hex(self.current_address), "", ""), tags=(self.level, item["Description"], self.current_address))
+                self.cur_iid = self.display_tree.insert(self.parent, "end", iid=None, text=item["Name"],
+                                                        image=self._image_tag[self.level],
+                                                        values=(hex(self.current_address), "", ""),
+                                                        tags=(self.level, item["Description"], self.current_address))
 
                 self.parent = self.cur_iid
                 self._display_field_render(item["Level"])
@@ -271,7 +288,10 @@ class Control:
     def _display_field_render(self, root):
         for item in root:
             self.level = 2
-            self.cur_iid = self.display_tree.insert(self.parent, "end", iid=None, text=item["Name"], image=self._image_tag[self.level], values=("", "%d:%d" % (int(item['Start']), int(item['End'])), item["Property"]), tags=(self.level, item["Description"], self.current_address))
+            self.cur_iid = self.display_tree.insert(self.parent, "end", iid=None, text=item["Name"],
+                                                    image=self._image_tag[self.level], values=(
+                "", "%d:%d" % (int(item['Start']), int(item['End'])), item["Property"]),
+                                                    tags=(self.level, item["Description"], self.current_address))
 
     def _expand(self, item):
         rslt = self._find_indexs_pattern.search(item["Name"])
@@ -297,7 +317,8 @@ class Control:
             self.level = 2
             name = self._locate_indexs_pattern.sub(str(num), i["Name"])
             self.cur_iid = self.display_tree.insert(self.parent, "end", iid=None, text=name,
-                                                    image=self._image_tag[self.level], values=("", "%d:%d" % (int(i['Start']), int(i['End'])), i["Property"]),
+                                                    image=self._image_tag[self.level], values=(
+                "", "%d:%d" % (int(i['Start']), int(i['End'])), i["Property"]),
                                                     tags=(self.level, i["Description"], self.current_address))
 
     def connected(self):
@@ -506,7 +527,7 @@ class Control:
         # Empty middle transmit value
         self._mid_value = []
         self._mid_value_pointer = self._mid_value
-        self._item_recursive((item, ))
+        self._item_recursive((item,))
 
         self.modify_tree_render(self._mid_value, self.display_tree.item(item)["tags"][0])
 
@@ -521,13 +542,13 @@ class Control:
             if event.keysym == "BackSpace":
                 return "break"
         else:
-            logging.debug("Insert position: %s" % (self.commander.index(tkinter.INSERT), ))
+            logging.debug("Insert position: %s" % (self.commander.index(tkinter.INSERT),))
 
     def _commander_entry(self, event):
-        logging.info("Get text: %s" % (self.commander.get(self.commander_start, tkinter.END), ))
-        self.commander.insert(tkinter.END, "\n%s" % (self._commander_prefix, ))
+        logging.info("Get text: %s" % (self.commander.get(self.commander_start, tkinter.END),))
+        self.commander.insert(tkinter.END, "\n%s" % (self._commander_prefix,))
         self.commander_start = self.commander.index(tkinter.INSERT)
-        logging.info("The new position: %s" % (self.commander_start, ))
+        logging.info("The new position: %s" % (self.commander_start,))
         return "break"
 
     def _modify_tree_delete_keyboard(self, event):
@@ -575,7 +596,8 @@ class Control:
         for i in self._top_columns_m[1:]:
             total_width += self.modify_tree.column(i)["width"]
 
-        self._popup_entry_handler.place(x=x, y=y+height//2, anchor=tkinter.W, relwidth=self.modify_tree.column("Value")["width"]/total_width)
+        self._popup_entry_handler.place(x=x, y=y + height // 2, anchor=tkinter.W,
+                                        relwidth=self.modify_tree.column("Value")["width"] / total_width)
 
         def _popup_entry_return(event):
             nonlocal value, rowid
