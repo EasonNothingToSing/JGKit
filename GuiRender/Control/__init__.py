@@ -1,6 +1,7 @@
 from PIL import Image, ImageTk
 import tkinter
 from tkinter import ttk
+from tkinter import filedialog
 import logging
 import re
 from GuiRender import View
@@ -76,6 +77,9 @@ class Control:
         self.control_button_frame = View.ButtonFrame(self.control_frame)
         self.control_button_frame.pack(expand=True, fill=tkinter.X, side=tkinter.RIGHT, anchor="n")
 
+        # self.control_toolchain_button_frame = View.ToolChainButtonFrame(self.control_frame)
+        # self.control_toolchain_button_frame.pack(expand=True, fill=tkinter.X, side=tkinter.BOTTOM, anchor="s")
+
         # Stage label
         self.stage_label = View.StageLabel(self.control_button_frame)
         self.stage_label.pack(side=tkinter.RIGHT, anchor="e", padx="4")
@@ -96,6 +100,14 @@ class Control:
         self.play_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
         self.play_button.configure(command=self.play)
 
+        self.open_file_button = View.OpenFileButton(self.control_button_frame)
+        self.open_file_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
+        self.open_file_button.configure(command=self.open_file)
+
+        self.save_file_button = View.SaveFileButton(self.control_button_frame)
+        self.save_file_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
+        self.save_file_button.configure(command=self.save_file)
+
         # Tree Frame
         self.tree_frame = View.TreeFrame(self.master_frame)
         self.tree_frame.pack(expand=True, fill=tkinter.BOTH, after=self.control_frame)
@@ -110,8 +122,8 @@ class Control:
         self.display_tree.pack(expand=True, fill=tkinter.BOTH)
 
         # Modify Tree
-        self._top_columns_m = ("Name", "Address | Field", "Property", "Value")
-        self._top_columns_width_m = ("250", "200", "100", "250")  # name, address, prop, value
+        self._top_columns_m = ("Name", "Address | Field", "Property", "Write Value", "Read Value")
+        self._top_columns_width_m = ("250", "200", "100", "125", "125")  # name, address, prop, value
         self.modify_tree_frame = View.ModifyTreeFrame(self.tree_frame)
         self.modify_tree_frame.pack(expand=True, fill=tkinter.BOTH, side=tkinter.RIGHT)
         self.modify_tree = View.ModifyTree(self.modify_tree_frame, self._top_columns_m, self._top_columns_width_m)
@@ -164,6 +176,9 @@ class Control:
         # Modify parameter
         self.tree_root = None
         self._popup_entry_handler = None
+
+        # Tree Traverse
+        self._traverse_list = []
 
         # Image
         self._image_tag = (
@@ -237,7 +252,7 @@ class Control:
                     return
             self._cur_iid = self.modify_tree.insert(self.parent, "end", iid=None, text=i["Name"],
                                                     image=self._image_tag[self.level],
-                                                    values=(i["Address"], i["Property"], value),
+                                                    values=(i["Address"], i["Property"], "NA", value),
                                                     tags=(self.level, i["Description"]))
             if i["Level"]:
                 self.level += 1
@@ -327,6 +342,8 @@ class Control:
         self.refresh_button.enable()
         self.stop_button.enable()
         self.play_button.disable()
+        self.open_file_button.enable()
+        self.save_file_button.enable()
 
     def disconnected(self):
         self.stage_label.disable()
@@ -334,6 +351,8 @@ class Control:
         self.refresh_button.disable()
         self.stop_button.disable()
         self.play_button.enable()
+        self.open_file_button.disable()
+        self.save_file_button.disable()
 
     def control_button_stage_machine(func):
         @wraps(func)
@@ -369,7 +388,7 @@ class Control:
                     else:
                         return False
 
-                elif func.__name__ == "_display_tree_double_click":
+                elif func.__name__ == "_display_tree_double_click" or "open_file" or "save_file":
                     return func(self, *args, **kwargs)
 
                 else:
@@ -417,6 +436,21 @@ class Control:
         # Disconnect to target
         del self.swd_handler
         return True
+
+    @control_button_stage_machine
+    def open_file(self):
+        addr = filedialog.askopenfilename(title="Load File", filetypes=[("register configuration",
+                                                                         "*.regcfg")], initialdir=r".")
+
+    @control_button_stage_machine
+    def save_file(self):
+        addr = filedialog.asksaveasfilename(title="Save File", initialdir=r".",
+                                            filetypes=[("register configuration", "*.regcfg")],
+                                            defaultextension=[("register configuration", "*.regcfg")])
+        self._modify_tree_get_all_items()
+
+        with open(addr, "w") as f:
+            f.write(str(self._traverse_list))
 
     def auto_refresh(self):
         # Depending the check button on or off
@@ -503,6 +537,11 @@ class Control:
             logging.debug("Write to the memory: %s --> %d" % (tpl[0], mem32))
             self.swd_handler.write32(int(tpl[0], base=16), mem32)
         else:
+            try:
+                data = int(data)
+            except ValueError:
+                data = int(data, base=16)
+
             self.swd_handler.write32(int(tpl[0], base=16), data)
 
     def read32_plus(self, tpl):
@@ -582,7 +621,7 @@ class Control:
             return
         tags = item["tags"]
         logging.debug("Click the row:%s, column:%s, tags:%s" % (rowid, column, str(tags)))
-        if tags[0] == "0":
+        if tags[0] == 0:
             return
 
         x, y, width, height = self.modify_tree.bbox(rowid, column)
@@ -590,23 +629,49 @@ class Control:
 
         value = list(self.modify_tree.item(rowid, "values"))
 
-        self._popup_entry_handler = View.EntryPopup(self.modify_tree, value[-1])
+        if value[-2] == "NA":
+            self._popup_entry_handler = View.EntryPopup(self.modify_tree, "")
+        else:
+            self._popup_entry_handler = View.EntryPopup(self.modify_tree, value[-2])
+
         # Get the total width
         total_width = self.modify_tree.column("#0")["width"]
         for i in self._top_columns_m[1:]:
             total_width += self.modify_tree.column(i)["width"]
 
         self._popup_entry_handler.place(x=x, y=y + height // 2, anchor=tkinter.W,
-                                        relwidth=self.modify_tree.column("Value")["width"] / total_width)
+                                        relwidth=self.modify_tree.column("Write Value")["width"] / total_width)
 
         def _popup_entry_return(event):
             nonlocal value, rowid
             tpl = self.parse_address(value[0])
 
-            self.write32_plus(tpl, self._popup_entry_handler.get())
+            write_data = self._popup_entry_handler.get()
+            self.write32_plus(tpl, write_data)
             value[-1] = hex(self.read32_plus(tpl))
+            value[-2] = write_data
             self.modify_tree.item(rowid, values=value)
             self._popup_entry_handler.destroy()
             self._popup_entry_handler = None
 
         self._popup_entry_handler.bind("<Return>", _popup_entry_return)
+
+    def _modify_tree_get_all_items(self, item=None):
+        tpl = None
+        values = None
+
+        if item:
+            values = self.modify_tree.item(item)
+            self._traverse_list.append(values)
+
+            tpl = self.modify_tree.get_children(item)
+        else:
+            tpl = self.modify_tree.get_children()
+
+        if not tpl:
+            return
+
+        for i in tpl:
+            self._modify_tree_get_all_items(i)
+
+        return

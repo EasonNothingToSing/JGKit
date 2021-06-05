@@ -16,7 +16,10 @@ UI_CONTROL_FRAME_WIDTH = UI_TOTAL_WIDTH
 UI_CONTROL_FRAME_HEIGHT = "50"
 
 UI_CONTROL_BUTTON_FRAME_WIDTH = "1400"
-UI_CONTROL_BUTTON_FRAME_HEIGHT = UI_CONTROL_FRAME_HEIGHT
+UI_CONTROL_BUTTON_FRAME_HEIGHT = UI_CONTROL_FRAME_HEIGHT # str(int(UI_CONTROL_FRAME_HEIGHT)/2)
+
+# UI_CONTROL_TOOLCHAIN_BUTTON_FRAME_WIDTH = "1400"
+# UI_CONTROL_TOOLCHAIN_BUTTON_FRAME_HEIGHT = str(int(UI_CONTROL_FRAME_HEIGHT)/2)
 
 UI_CONTROL_DESCRIPTION_FRAME_WIDTH = "200"
 UI_CONTROL_DESCRIPTION_FRAME_HEIGHT = UI_CONTROL_FRAME_HEIGHT
@@ -114,6 +117,13 @@ class ButtonFrame(BaseFrame):
                                           height=UI_CONTROL_BUTTON_FRAME_HEIGHT, bg=DARCULA_DEFAULT_BG, **kwargs)
 
 
+class ToolChainButtonFrame(BaseFrame):
+    def __init__(self, master, **kwargs):
+        super(ToolChainButtonFrame, self).__init__(master, width=UI_CONTROL_TOOLCHAIN_BUTTON_FRAME_WIDTH,
+                                                   height=UI_CONTROL_TOOLCHAIN_BUTTON_FRAME_HEIGHT,
+                                                   bg=DARCULA_DEFAULT_BG, **kwargs)
+
+
 class StageLabel(tkinter.Label):
     def __init__(self, master, **kwargs):
         self.disconnect_image = ImageTk.PhotoImage(
@@ -204,6 +214,42 @@ class RefreshButton(FlatButton):
 
     def disable(self):
         self.configure(image=self.refresh_dark_image, state=tkinter.DISABLED)
+        self.unbindable()
+
+
+class OpenFileButton(FlatButton):
+    def __init__(self, master, **kwargs):
+        self.open_image = ImageTk.PhotoImage(
+            Image.open("./.image/.file/open.png").resize((16, 16), Image.ANTIALIAS))
+        self.open_dark_image = ImageTk.PhotoImage(
+            Image.open("./.image/.file/open_dark.png").resize((16, 16), Image.ANTIALIAS))
+        super(OpenFileButton, self).__init__(master, image=self.open_dark_image, state=tkinter.DISABLED, **kwargs)
+        self.unbindable()
+
+    def enable(self):
+        self.configure(image=self.open_image, state=tkinter.NORMAL)
+        self.bindable()
+
+    def disable(self):
+        self.configure(image=self.open_dark_image, state=tkinter.DISABLED)
+        self.unbindable()
+
+
+class SaveFileButton(FlatButton):
+    def __init__(self, master, **kwargs):
+        self.save_image = ImageTk.PhotoImage(
+            Image.open("./.image/.file/save.png").resize((16, 16), Image.ANTIALIAS))
+        self.save_dark_image = ImageTk.PhotoImage(
+            Image.open("./.image/.file/save_dark.png").resize((16, 16), Image.ANTIALIAS))
+        super(SaveFileButton, self).__init__(master, image=self.save_dark_image, state=tkinter.DISABLED, **kwargs)
+        self.unbindable()
+
+    def enable(self):
+        self.configure(image=self.save_image, state=tkinter.NORMAL)
+        self.bindable()
+
+    def disable(self):
+        self.configure(image=self.save_dark_image, state=tkinter.DISABLED)
         self.unbindable()
 
 
