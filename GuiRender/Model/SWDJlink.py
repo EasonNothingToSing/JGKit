@@ -25,7 +25,7 @@ class SWDJlink(pylink.JLink):
         try:
             return self.memory_read32(addr, num_words=1)[0]
         except errors.JLinkReadException:
-            return False
+            return -1
 
     def write32(self, addr, data):
         self.clear_error()

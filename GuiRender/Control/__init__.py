@@ -10,6 +10,7 @@ from GuiRender.Model import SWDJlink
 from GuiRender.Model import WidgetLogger
 from bitstring import BitArray
 from functools import wraps
+import json
 
 
 class Control:
@@ -442,15 +443,26 @@ class Control:
         addr = filedialog.askopenfilename(title="Load File", filetypes=[("register configuration",
                                                                          "*.regcfg")], initialdir=r".")
 
+        if not addr:
+            return
+
+        with open(addr, mode="r", encoding="utf8") as f:
+            self._traverse_list = json.load(fp=f)
+
+        self._modify_tree_insert_file_items(self._traverse_list)
+
     @control_button_stage_machine
     def save_file(self):
         addr = filedialog.asksaveasfilename(title="Save File", initialdir=r".",
                                             filetypes=[("register configuration", "*.regcfg")],
                                             defaultextension=[("register configuration", "*.regcfg")])
-        self._modify_tree_get_all_items()
+        if not addr:
+            return
 
-        with open(addr, "w") as f:
-            f.write(str(self._traverse_list))
+        self._modify_tree_get_all_items(self._traverse_list)
+
+        with open(addr, mode="w", encoding="utf8") as f:
+            json.dump(self._traverse_list, fp=f)
 
     def auto_refresh(self):
         # Depending the check button on or off
@@ -518,7 +530,7 @@ class Control:
         if tpl[1] or tpl[2]:
             # Read address data
             mem32 = self.swd_handler.read32(int(tpl[0], base=16))
-            if not mem32:
+            if mem32 == -1:
                 return False
             # Data & mask
             mask = self._get_mask(int(tpl[2]) - int(tpl[1]) + 1)
@@ -546,7 +558,7 @@ class Control:
 
     def read32_plus(self, tpl):
         mem32 = self.swd_handler.read32(int(tpl[0], base=16))
-        if not mem32:
+        if mem32 == -1:
             return False
         logging.debug("Read the whole register: %s" % (hex(mem32)))
         if tpl[1] or tpl[2]:
@@ -656,13 +668,14 @@ class Control:
 
         self._popup_entry_handler.bind("<Return>", _popup_entry_return)
 
-    def _modify_tree_get_all_items(self, item=None):
+    def _modify_tree_get_all_items(self, traverse_list, item=None):
         tpl = None
         values = None
 
         if item:
             values = self.modify_tree.item(item)
-            self._traverse_list.append(values)
+            values.update({"next": []})
+            traverse_list.append(values)
 
             tpl = self.modify_tree.get_children(item)
         else:
@@ -672,6 +685,24 @@ class Control:
             return
 
         for i in tpl:
-            self._modify_tree_get_all_items(i)
+            if item:
+                self._modify_tree_get_all_items(values["next"], i)
+            else:
+                self._modify_tree_get_all_items(traverse_list, i)
 
         return
+
+    def _modify_tree_insert_file_items(self, list, parent=""):
+        for i in list:
+            if i["values"][2] != "NA":
+                self.write32_plus(self.parse_address(i["values"][0]), i["values"][2])
+                # i["values"][-1] = hex(self.read32_plus(self.parse_address(i["values"][0])))
+
+            iid = self.modify_tree.insert(parent=parent, index='end', image=i["image"], text=i["text"], open=i["open"],
+                                          values=i["values"], tags=i["tags"])
+
+            if i["next"]:
+                self._modify_tree_insert_file_items(i["next"], iid)
+            else:
+                continue
+        self.refresh()
