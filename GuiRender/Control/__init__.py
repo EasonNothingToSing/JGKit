@@ -115,7 +115,7 @@ class Control:
 
         # Display Tree
         self._top_columns_d = ("Name", "Address", "Field", "Property")
-        self._top_columns_width_d = ("250", "200", "200", "150")
+        self._top_columns_width_d = ("125", "100", "100", "75")
         self.display_tree_frame = View.DisplayTreeFrame(self.tree_frame)
         self.display_tree_frame.pack(expand=True, fill=tkinter.BOTH, side=tkinter.LEFT)
         self.display_tree = View.DisplayTree(self.display_tree_frame, self._top_columns_d, self._top_columns_width_d)
@@ -124,7 +124,7 @@ class Control:
 
         # Modify Tree
         self._top_columns_m = ("Name", "Address | Field", "Property", "Write Value", "Read Value")
-        self._top_columns_width_m = ("250", "200", "100", "125", "125")  # name, address, prop, value
+        self._top_columns_width_m = ("125", "100", "50", "62", "62")  # name, address, prop, value
         self.modify_tree_frame = View.ModifyTreeFrame(self.tree_frame)
         self.modify_tree_frame.pack(expand=True, fill=tkinter.BOTH, side=tkinter.RIGHT)
         self.modify_tree = View.ModifyTree(self.modify_tree_frame, self._top_columns_m, self._top_columns_width_m)
