@@ -459,6 +459,7 @@ class Control:
         if not addr:
             return
 
+        self._traverse_list = []
         self._modify_tree_get_all_items(self._traverse_list)
 
         with open(addr, mode="w", encoding="utf8") as f:
