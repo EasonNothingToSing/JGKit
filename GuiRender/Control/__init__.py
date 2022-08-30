@@ -195,11 +195,11 @@ class Control:
 
     def device_generator(self):
         memory_header = [{"Key": "Address Start", "Level": (1,), "Priority": ("M",)},
-                         {"Key": "Module", "Level": (1,), "Priority": ("L",)},
+                         {"Key": "module", "Level": (1,), "Priority": ("L",)},
                          {"Key": "Class", "Level": (1,), "Priority": ("L",)}]
         memory_reheader = ("Address", "Name", "Class")
-        memory_sheets = ("AP Peripheral AddrMapping", "CP Peripheral AddrMapping")
-        memory_e2j = Excel2Dict.E2D(excel="Venus_SoC_Memory_Mapping.xls", header=memory_header, sheets=memory_sheets,
+        memory_sheets = ("Peripherals", )
+        memory_e2j = Excel2Dict.E2D(excel="Vega_SoC_Memory_Mapping.xls", header=memory_header, sheets=memory_sheets,
                                     reheader=memory_reheader)
         memory_e2j.convert()
 
@@ -217,7 +217,7 @@ class Control:
 
         reheader = ("Address", "Start", "End", "Property", "Name", "Description")
 
-        e2j = Excel2Dict.E2D(excel="Venus_SoC_Memory_Mapping.xls", header=header, reheader=reheader)
+        e2j = Excel2Dict.E2D(excel="Vega_SoC_Memory_Mapping.xls", header=header, reheader=reheader)
         e2j.convert()
         venus_device = []
         for dev in memory_e2j_list:

@@ -11,7 +11,7 @@ class SWDJlink(pylink.JLink):
         super(SWDJlink, self).__init__()
         self.open()
         self.set_tif(pylink.enums.JLinkInterfaces.SWD)
-        self.connect("CORTEX-M33")
+        self.connect("CORTEX-M0+")
         if self.connected():
             logging.debug("Connect to the target")
         else:
