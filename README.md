@@ -3,4 +3,6 @@ It's upgrades version of Jlink-Chip-Test-ToolKit repository,  using MVC design, 
 
 pyinstaller command:
     pyinstaller -F main.py -n JGKit -i exchange.ico -windowed
+    or
+    pyinstaller JGKit.spec
 
