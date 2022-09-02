@@ -199,7 +199,7 @@ class Control:
                          {"Key": "Class", "Level": (1,), "Priority": ("L",)}]
         memory_reheader = ("Address", "Name", "Class")
         memory_sheets = ("Peripherals", )
-        memory_e2j = Excel2Dict.E2D(excel="Vega_SoC_Memory_Mapping.xls", header=memory_header, sheets=memory_sheets,
+        memory_e2j = Excel2Dict.E2D(excel="VegaP_SoC_Memory_Mapping.xls", header=memory_header, sheets=memory_sheets,
                                     reheader=memory_reheader)
         memory_e2j.convert()
 
@@ -217,7 +217,7 @@ class Control:
 
         reheader = ("Address", "Start", "End", "Property", "Name", "Description")
 
-        e2j = Excel2Dict.E2D(excel="Vega_SoC_Memory_Mapping.xls", header=header, reheader=reheader)
+        e2j = Excel2Dict.E2D(excel="VegaP_SoC_Memory_Mapping.xls", header=header, reheader=reheader)
         e2j.convert()
         venus_device = []
         for dev in memory_e2j_list:
