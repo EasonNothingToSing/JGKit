@@ -1,6 +1,6 @@
 {
   "name": "Vega",
-  "core": "CORTEX-M33",
+  "core": "CORTEX-M0+",
   "excel": "Vega_SoC_Memory_Mapping.xls",
   "sheets": [
     "Peripherals"
