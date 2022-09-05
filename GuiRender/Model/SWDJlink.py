@@ -1,6 +1,7 @@
 import pylink
 from pylink import errors
 import logging
+import global_var
 
 
 __all__ = ["SWDJlink", ]
@@ -8,10 +9,12 @@ __all__ = ["SWDJlink", ]
 
 class SWDJlink(pylink.JLink):
     def __init__(self):
-        super(SWDJlink, self).__init__()
+        self.__jlink_dll = pylink.library.Library("JLink_x64.dll")
+        super(SWDJlink, self).__init__(lib=self.__jlink_dll)
+        self.core = global_var.get_value("core")
         self.open()
         self.set_tif(pylink.enums.JLinkInterfaces.SWD)
-        self.connect("CORTEX-M0+")
+        self.connect(self.core)
         if self.connected():
             logging.debug("Connect to the target")
         else:

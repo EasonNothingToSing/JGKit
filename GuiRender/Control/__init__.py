@@ -11,6 +11,7 @@ from GuiRender.Model import WidgetLogger
 from bitstring import BitArray
 from functools import wraps
 import json
+import global_var
 
 
 class Control:
@@ -19,6 +20,9 @@ class Control:
         self.control_stage_machine = "disconnected"
 
         self._master = master
+
+        self._excel = global_var.get_value("excel")
+        self._module_sheets = global_var.get_value("sheets")
 
         # Style *************************************************************************************
         style = ttk.Style(self._master)
@@ -92,6 +96,8 @@ class Control:
         self.auto_check.pack(side=tkinter.RIGHT, anchor="e", padx="4")
         self.refresh_button = View.RefreshButton(self.control_button_frame, command=self.refresh)
         self.refresh_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
+        self.upload_button = View.UploadButton(self.control_button_frame, command=self.upload)
+        self.upload_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
         View.GraySeparator(self.control_button_frame).pack(side=tkinter.RIGHT, anchor="e", pady="4", fill="y", padx="4")
 
         self.stop_button = View.StopButton(self.control_button_frame)
@@ -198,8 +204,8 @@ class Control:
                          {"Key": "Module", "Level": (1,), "Priority": ("L",)},
                          {"Key": "Class", "Level": (1,), "Priority": ("L",)}]
         memory_reheader = ("Address", "Name", "Class")
-        memory_sheets = ("AP Peripheral AddrMapping", )
-        memory_e2j = Excel2Dict.E2D(excel="ARCS_SoC_Memory_Mapping.xls", header=memory_header, sheets=memory_sheets,
+        memory_sheets = self._module_sheets
+        memory_e2j = Excel2Dict.E2D(excel=self._excel, header=memory_header, sheets=memory_sheets,
                                     reheader=memory_reheader)
         memory_e2j.convert()
 
@@ -217,7 +223,7 @@ class Control:
 
         reheader = ("Address", "Start", "End", "Property", "Name", "Description")
 
-        e2j = Excel2Dict.E2D(excel="ARCS_SoC_Memory_Mapping.xls", header=header, reheader=reheader)
+        e2j = Excel2Dict.E2D(excel=self._excel, header=header, reheader=reheader)
         e2j.convert()
         venus_device = []
         for dev in memory_e2j_list:
@@ -345,6 +351,7 @@ class Control:
         self.play_button.disable()
         self.open_file_button.enable()
         self.save_file_button.enable()
+        self.upload_button.enable()
 
     def disconnected(self):
         self.stage_label.disable()
@@ -354,6 +361,7 @@ class Control:
         self.play_button.enable()
         self.open_file_button.disable()
         self.save_file_button.disable()
+        self.upload_button.disable()
 
     def control_button_stage_machine(func):
         @wraps(func)
@@ -407,6 +415,28 @@ class Control:
         logging.debug("<Refresh>")
         self._sub_refresh()
         return True
+
+    @control_button_stage_machine
+    def upload(self):
+        logging.debug("<Upload>")
+        self._sub_upload()
+        return True
+
+    def _sub_upload(self, p=None):
+        items = self.modify_tree.get_children(p)
+        if not items:
+            return
+        for item in items:
+            dct = self.modify_tree.item(item)
+            if dct["tags"][0] != 0:
+                if dct["values"][2] != "NA":
+                    self.write32_plus(self.parse_address(dct["values"][0]), dct["values"][2])
+                    value = str(hex(self.read32_plus(self.parse_address(dct["values"][0]))))
+                    values = dct["values"]
+                    values[-1] = value
+                    # Reload
+                    self.modify_tree.item(item, values=values)
+            self._sub_upload(item)
 
     def _sub_refresh(self, p=None):
         items = self.modify_tree.get_children(p)

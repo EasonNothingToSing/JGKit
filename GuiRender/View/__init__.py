@@ -217,6 +217,24 @@ class RefreshButton(FlatButton):
         self.unbindable()
 
 
+class UploadButton(FlatButton):
+    def __init__(self, master, **kwargs):
+        self.upload_image = ImageTk.PhotoImage(
+            Image.open("./.image/.refresh/upload.png").resize((16, 16), Image.ANTIALIAS))
+        self.upload_dark_image = ImageTk.PhotoImage(
+            Image.open("./.image/.refresh/upload-dark.png").resize((16, 16), Image.ANTIALIAS))
+        super(UploadButton, self).__init__(master, image=self.upload_dark_image, state=tkinter.DISABLED, **kwargs)
+        self.unbindable()
+
+    def enable(self):
+        self.configure(image=self.upload_image, state=tkinter.NORMAL)
+        self.bindable()
+
+    def disable(self):
+        self.configure(image=self.upload_dark_image, state=tkinter.DISABLED)
+        self.unbindable()
+
+
 class OpenFileButton(FlatButton):
     def __init__(self, master, **kwargs):
         self.open_image = ImageTk.PhotoImage(

@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['main.py'],
-             pathex=['e:\\APP\\python_project\\JGKit'],
+             pathex=['E:\\APP\\python_project\\JGKit'],
              binaries=[],
              datas=[],
              hiddenimports=[],
@@ -30,4 +30,4 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False , icon='exchange.ico')
+          console=True , icon='exchange.ico')
