@@ -242,7 +242,7 @@ if __name__ == "__main__":
 
     reheader = ("Address", "Start", "End", "Property", "Name", "Description")
 
-    e2d = E2D(excel="Venus_SoC_Memory_Mapping.xls", header=header, reheader=reheader)
+    e2d = E2D(excel="../../Venus_SoC_Memory_Mapping.xls", header=header, reheader=reheader)
     e2d.convert()
     for i in e2d:
         print(i)

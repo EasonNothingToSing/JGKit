@@ -1,0 +1,8 @@
+{
+  "name": "Venus",
+  "core": "CORTEX-M33",
+  "excel": "Venus_SoC_Memory_Mapping.xls",
+  "sheets": [
+    "AP Peripheral AddrMapping", "CP Peripheral AddrMapping"
+  ]
+}

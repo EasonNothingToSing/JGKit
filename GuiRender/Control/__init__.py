@@ -11,6 +11,7 @@ from GuiRender.Model import WidgetLogger
 from bitstring import BitArray
 from functools import wraps
 import json
+import os
 import global_var
 
 
@@ -21,7 +22,7 @@ class Control:
 
         self._master = master
 
-        self._excel = global_var.get_value("excel")
+        self._excel = os.path.join("./.data/xls", global_var.get_value("excel"))
         self._module_sheets = global_var.get_value("sheets")
 
         # Style *************************************************************************************
