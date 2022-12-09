@@ -37,6 +37,9 @@ class SWDJlink(pylink.JLink):
         except errors.JLinkWriteException:
             return False
 
+    def is_connected(self):
+        return self.connected()
+
 
 if __name__ == "__main__":
     swd = SWDJlink()

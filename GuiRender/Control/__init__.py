@@ -198,6 +198,9 @@ class Control:
         # SWD handler
         self.swd_handler = None
 
+        self._swd_connected_time = 100
+        self._swd_connected_handler = None
+
         self.display_device_render(self.device_generator())
 
     def device_generator(self):
@@ -461,11 +464,13 @@ class Control:
         except:
             self.swd_handler = None
             return False
+        self._swd_connected_handler = self._master.after(self._swd_connected_time, self._swd_connected)
         return True
 
     @control_button_stage_machine
     def stop(self):
         # Disconnect to target
+        self._master.after_cancel(self._swd_connected_handler)
         del self.swd_handler
         return True
 
@@ -557,6 +562,14 @@ class Control:
         mask.invert()
         mask = mask[1:]
         return mask.uint
+
+    def _swd_connected(self):
+        if self.swd_handler.is_connected():
+            logging.debug("Connected")
+            self._swd_connected_handler = self._master.after(self._swd_connected_time, self._swd_connected)
+        else:
+            logging.debug("Disconnected")
+            self.stop()
 
     def write32_plus(self, tpl, data):
         if tpl[1] or tpl[2]:
