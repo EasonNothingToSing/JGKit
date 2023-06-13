@@ -10,7 +10,7 @@ import pygame
 import pygame_menu
 
 
-__CHIP_MENU__ = [("Venus", "venus-configure.json"), ("Vega", "vega-configure.json"), ("VegaP", "vegap-configure.json"), ("Arcs", "arcs-configure.json")]
+__CHIP_MENU__ = [("Venus", "venus-configure.json"), ("Vega", "vega-configure.json"), ("VegaP", "vegap-configure.json"), ("Arcs", "arcs-configure.json"), ("Arcs-B0", "arcs-b0-configure.json")]
 xls_config_name = __CHIP_MENU__[0][1]
 
 

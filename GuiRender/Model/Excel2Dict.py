@@ -194,18 +194,20 @@ class E2D:
         return True
 
     def _locate_key(self, sheet):
-        for f_num, dct in enumerate(self.header):
-            for num, cell in enumerate(sheet.row(0)):
-                if dct["Key"] == cell.value:
-                    if "Num" in self.header[f_num].keys():
-                        self.header[f_num]["Num"] = num
-                    else:
-                        self.header[f_num].update({"Num": num})
-                    break
-            else:
-                # Not locate the key
-                return False
-        return True
+        if sheet.nrows > 0:
+            for f_num, dct in enumerate(self.header):
+                for num, cell in enumerate(sheet.row(0)):
+                    if dct["Key"] == cell.value:
+                        if "Num" in self.header[f_num].keys():
+                            self.header[f_num]["Num"] = num
+                        else:
+                            self.header[f_num].update({"Num": num})
+                        break
+                else:
+                    # Not locate the key
+                    return False
+            return True
+        return False
 
     def _xl2strc(self):
         for sheet in self.sheets:

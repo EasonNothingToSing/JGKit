@@ -232,7 +232,7 @@ class Control:
         venus_device = []
         for dev in memory_e2j_list:
             for cla in e2j:
-                if dev["Class"] == cla["Sheet_Name"]:
+                if cla["Sheet_Name"] in dev["Class"]:
                     dev["Level"] = cla["Level"]
                     del dev["Class"]
                     venus_device.append(dev)
