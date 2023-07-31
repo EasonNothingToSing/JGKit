@@ -20,7 +20,8 @@ if __name__ == "__main__":
 
     pygame.init()
     surface = pygame.display.set_mode((600, 400))
-
+    pygame.display.set_icon(pygame.image.load("./.image/icon/exchange.png"))
+    pygame.display.set_caption("JGKit!!!")
 
     def set_chip_config(value, xls_name):
         global xls_config_name
@@ -47,7 +48,7 @@ if __name__ == "__main__":
         Control.Control(tk)
         tk.mainloop()
 
-    menu = pygame_menu.Menu('Welcome', 400, 300,
+    menu = pygame_menu.Menu('Welcome', 600, 400,
                             theme=pygame_menu.themes.THEME_BLUE)
 
     menu.add.selector('Chip :', __CHIP_MENU__, onchange=set_chip_config)

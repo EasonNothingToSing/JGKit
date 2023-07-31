@@ -8,11 +8,13 @@ from GuiRender import View
 from GuiRender.Model import Excel2Dict
 from GuiRender.Model import SWDJlink
 from GuiRender.Model import WidgetLogger
+from GuiRender.Model import Xlsx2Xls
 from bitstring import BitArray
 from functools import wraps
 import json
 import os
 import global_var
+import shutil
 
 
 class Control:
@@ -24,6 +26,15 @@ class Control:
 
         self._excel = os.path.join("./.data/xls", global_var.get_value("excel"))
         self._module_sheets = global_var.get_value("sheets")
+
+        basename, ext = os.path.splitext(global_var.get_value("excel"))
+        # Check xls file or xlsx file is exists
+        if os.path.exists(os.path.join("./.data/xls", basename + ".xls")):
+            shutil.copy(os.path.join("./.data/xls", basename + ".xls"), os.path.join("./.data/xls/.temp", basename + ".xls"))
+        elif os.path.exists(os.path.join("./.data/xls", basename + ".xlsx")):
+            Xlsx2Xls.xlsxfileconvert(os.path.join("./.data/xls", basename + ".xlsx"))
+
+        self._excel = os.path.join("./.data/xls/.temp", basename + ".xls")
 
         # Style *************************************************************************************
         style = ttk.Style(self._master)
@@ -298,7 +309,10 @@ class Control:
     def _display_register_render(self, root):
         for item in root:
             self.level = 1
-            self.current_address = self.address_base_pointer + int(item["Address"], base=16)
+            try:
+                self.current_address = self.address_base_pointer + int(item["Address"], base=16)
+            except TypeError:
+                self.current_address = self.address_base_pointer + int(item["Address"])
             if not self._expand(item):
                 self.cur_iid = self.display_tree.insert(self.parent, "end", iid=None, text=item["Name"],
                                                         image=self._image_tag[self.level],
