@@ -127,6 +127,10 @@ class Control:
         self.save_file_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
         self.save_file_button.configure(command=self.save_file)
 
+        self.glimpse_file_button = View.GlimpseFileButton(self.control_button_frame)
+        self.glimpse_file_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
+        self.glimpse_file_button.configure(command=self.glimpse_file)
+
         # Tree Frame
         self.tree_frame = View.TreeFrame(self.master_frame)
         self.tree_frame.pack(expand=True, fill=tkinter.BOTH, after=self.control_frame)
@@ -198,6 +202,7 @@ class Control:
 
         # Tree Traverse
         self._traverse_list = []
+        self._glimpse_list = []
 
         # Image
         self._image_tag = (
@@ -370,6 +375,7 @@ class Control:
         self.open_file_button.enable()
         self.save_file_button.enable()
         self.upload_button.enable()
+        self.glimpse_file_button.enable()
 
     def disconnected(self):
         self.stage_label.disable()
@@ -380,6 +386,7 @@ class Control:
         self.open_file_button.disable()
         self.save_file_button.disable()
         self.upload_button.disable()
+        self.glimpse_file_button.disable()
 
     def control_button_stage_machine(func):
         @wraps(func)
@@ -514,6 +521,20 @@ class Control:
 
         with open(addr, mode="w", encoding="utf8") as f:
             json.dump(self._traverse_list, fp=f)
+
+    @control_button_stage_machine
+    def glimpse_file(self):
+        addr = filedialog.asksaveasfilename(title="Glimpse File", initialdir=r".",
+                                            filetypes=[("glimpse configuration", "*.glicfg")],
+                                            defaultextension=[("glimpse configuration", "*.glicfg")])
+        if not addr:
+            return
+
+        self._glimpse_list = []
+        self._modify_tree_glimpse_all_items(self._glimpse_list)
+
+        with open(addr, mode="w", encoding="utf8") as f:
+            json.dump(self._glimpse_list, fp=f)
 
     def auto_refresh(self):
         # Depending the check button on or off
@@ -748,6 +769,42 @@ class Control:
                 self._modify_tree_get_all_items(values["next"], i)
             else:
                 self._modify_tree_get_all_items(traverse_list, i)
+
+        return
+
+    def _modify_tree_glimpse_all_items(self, traverse_list, item=None):
+        tpl = None
+        store_value = None
+
+        if item:
+            values = self.modify_tree.item(item)
+            store_value = {"Name": values["text"], "Address": values["values"][0], "Values": "NA"}
+
+            # Is a sheet
+            if values["tags"][0] == 0:
+                store_value.update({"next": []})
+            else:
+                # Is a device
+                store_value["Values"] = hex(self.swd_handler.read32(int(store_value["Address"], base=16)))
+
+            traverse_list.append(store_value)
+
+            if values["tags"][0] == 1:
+                return
+
+            tpl = self.modify_tree.get_children(item)
+
+        else:
+            tpl = self.modify_tree.get_children()
+
+        if not tpl:
+            return
+
+        for i in tpl:
+            if item:
+                self._modify_tree_glimpse_all_items(store_value["next"], i)
+            else:
+                self._modify_tree_glimpse_all_items(traverse_list, i)
 
         return
 

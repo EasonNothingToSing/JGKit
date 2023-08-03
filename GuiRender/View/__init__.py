@@ -271,6 +271,24 @@ class SaveFileButton(FlatButton):
         self.unbindable()
 
 
+class GlimpseFileButton(FlatButton):
+    def __init__(self, master, **kwargs):
+        self.glimpse_image = ImageTk.PhotoImage(
+            Image.open("./.image/.file/glimpse.png").resize((16, 16), Image.ANTIALIAS))
+        self.glimpse_dark_image = ImageTk.PhotoImage(
+            Image.open("./.image/.file/glimpse_dark.png").resize((16, 16), Image.ANTIALIAS))
+        super(GlimpseFileButton, self).__init__(master, image=self.glimpse_dark_image, state=tkinter.DISABLED, **kwargs)
+        self.unbindable()
+
+    def enable(self):
+        self.configure(image=self.glimpse_image, state=tkinter.NORMAL)
+        self.bindable()
+
+    def disable(self):
+        self.configure(image=self.glimpse_dark_image, state=tkinter.DISABLED)
+        self.unbindable()
+
+
 class DarculaCheckButton(tkinter.Checkbutton):
     def __init__(self, master, **kwargs):
         super(DarculaCheckButton, self).__init__(master, bg=DARCULA_DEFAULT_BG, fg=DARCULA_DEFAULT_FG,
