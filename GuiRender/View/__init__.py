@@ -34,17 +34,42 @@ UI_DISPLAY_TREE_MARGIN = 5
 UI_DEBUG_FRAME_WIDTH = UI_TOTAL_WIDTH
 UI_DEBUG_FRAME_HEIGHT = "175"
 
-UI_COMMANDER_FRAME_WIDHT = UI_DISPLAY_TREE_WIDTH
+UI_COMMANDER_FRAME_WIDTH = UI_DISPLAY_TREE_WIDTH
 UI_COMMANDER_FRAME_HEIGHT = UI_DEBUG_FRAME_HEIGHT
 
-UI_LOG_FRAME_WIDHT = UI_COMMANDER_FRAME_WIDHT
+UI_LOG_FRAME_WIDTH = UI_COMMANDER_FRAME_WIDTH
 UI_LOG_FRAME_HEIGHT = UI_COMMANDER_FRAME_HEIGHT
 
-DARCULA_DEFAULT_BG = "#000000"
-DARCULA_DEFAULT_FG = "#FFFFFF"
+UI_MEM_FRAME_WIDTH = UI_COMMANDER_FRAME_WIDTH
+UI_MEM_FRAME_HEIGHT = UI_COMMANDER_FRAME_HEIGHT
+UI_MEM_ELEMENTS_WIDTH = 20
+
+UI_MEM_CONTROL_FRAME_WIDTH = UI_MEM_FRAME_WIDTH
+UI_MEM_CONTROL_FRAME_HEIGHT = "20"
+
+# BG
+DARCULA_DEFAULT_BG = "#282c34"
+DARCULA_DEFAULT_SEC_BG = "#2e323a"
+
+# FG
+DARCULA_DEFAULT_FG = "#abb2bf"
+DARCULA_DEFAULT_SEC_FG = "#848c96"
+
+# Hover
+DARCULA_BUTTON_HOVER = "#3e4451"
+
+# Active
+DARCULA_BUTTON_ACTIVE = "#4a90d9"
+
+# Hover
+DARCULA_BUTTON_WARNING = "#e06c75"
+
+# Confirm
+DARCULA_BUTTON_CONFIRM = "#98c379"
+
 DARCULA_DEFAULT_SELECT_BD = "#42678D"
 
-DARCULA_BUTTON_HOVER = "#4C5052"
+DARCULA_DEFAULT_TAB_BD = "lightblue"
 
 UI_FONT = ("Helvetica", -int(UI_FONT_SIZE_PIXEL))
 
@@ -397,14 +422,14 @@ class DebugFrame(BaseFrame):
 
 class CommanderFrame(BaseFrame):
     def __init__(self, master, **kwargs):
-        super(CommanderFrame, self).__init__(master, width=UI_COMMANDER_FRAME_WIDHT, height=UI_COMMANDER_FRAME_HEIGHT,
+        super(CommanderFrame, self).__init__(master, width=UI_COMMANDER_FRAME_WIDTH, height=UI_COMMANDER_FRAME_HEIGHT,
                                              bg=DARCULA_DEFAULT_BG, **kwargs)
 
 
 class Commander(tkinter.Text):
     def __init__(self, master, **kwargs):
         super(Commander, self).__init__(master,
-                                        width=int(UI_COMMANDER_FRAME_WIDHT) // int(UI_FONT_SIZE_PIXEL),
+                                        width=int(UI_COMMANDER_FRAME_WIDTH) // int(UI_FONT_SIZE_PIXEL),
                                         height=int(UI_COMMANDER_FRAME_HEIGHT) // int(UI_FONT_SIZE_PIXEL),
                                         bg=DARCULA_DEFAULT_BG, font=UI_FONT, padx=UI_TEXT_PADX,
                                         pady=UI_TEXT_PADY, fg=DARCULA_DEFAULT_FG, highlightthickness="3",
@@ -415,13 +440,13 @@ class Commander(tkinter.Text):
 
 class LogFrame(BaseFrame):
     def __init__(self, master, **kwargs):
-        super(LogFrame, self).__init__(master, width=UI_LOG_FRAME_WIDHT, height=UI_LOG_FRAME_HEIGHT,
+        super(LogFrame, self).__init__(master, width=UI_LOG_FRAME_WIDTH, height=UI_LOG_FRAME_HEIGHT,
                                        bg=DARCULA_DEFAULT_BG, **kwargs)
 
 
 class Log(tkinter.Text):
     def __init__(self, master, **kwargs):
-        super(Log, self).__init__(master, width=int(UI_LOG_FRAME_WIDHT) // int(UI_FONT_SIZE_PIXEL),
+        super(Log, self).__init__(master, width=int(UI_LOG_FRAME_WIDTH) // int(UI_FONT_SIZE_PIXEL),
                                   height=int(UI_LOG_FRAME_HEIGHT) // int(UI_FONT_SIZE_PIXEL), bg=DARCULA_DEFAULT_BG,
                                   font=UI_FONT, padx=UI_TEXT_PADX, pady=UI_TEXT_PADY, fg=DARCULA_DEFAULT_FG,
                                   **kwargs)
@@ -433,6 +458,159 @@ class Log(tkinter.Text):
             return
         else:
             return 'break'
+
+
+class MemFrame(BaseFrame):
+    def __init__(self, master, **kwargs):
+        super(MemFrame, self).__init__(master, width=UI_MEM_FRAME_WIDTH, height=UI_MEM_FRAME_HEIGHT,
+                                       bg=DARCULA_DEFAULT_BG, **kwargs)
+
+
+class MemControlFrame(BaseFrame):
+    def __init__(self, master, **kwargs):
+        super(MemControlFrame, self).__init__(master, width=UI_MEM_CONTROL_FRAME_WIDTH,
+                                              height=UI_MEM_CONTROL_FRAME_HEIGHT,
+                                              bg=DARCULA_DEFAULT_BG, **kwargs)
+
+
+class MemNoteBook(ttk.Notebook):
+    def __init__(self, master, **kwargs):
+        super(MemNoteBook, self).__init__(master, **kwargs)
+
+
+class Memsheet(tkinter.Frame):
+    def __init__(self, master, **kwargs):
+        super(Memsheet, self).__init__(master, bg=DARCULA_DEFAULT_BG, **kwargs)
+
+
+class MemHeaderFrame(tkinter.Frame):
+    def __init__(self, master, **kwargs):
+        super(MemHeaderFrame, self).__init__(master, bg=DARCULA_DEFAULT_SEC_BG, **kwargs)
+
+
+class MemHeaderLab(tkinter.Label):
+    DEFAULT_SHEET_HEADER_LABEL_WIDTH = UI_MEM_ELEMENTS_WIDTH
+    DEFAULT_SHEET_HEADER_LABEL_MARGING = 3
+    DEFAULT_SHEET_HEADER_LABEL_BW = 1
+
+    def __init__(self, master, **kwargs):
+        super(MemHeaderLab, self).__init__(master, fg=DARCULA_DEFAULT_SEC_FG, bg=DARCULA_DEFAULT_SEC_BG,
+                                           width=MemLabel.DEFAULT_SHEET_LABEL_WIDTH,
+                                           relief="raised", padx=MemLabel.DEFAULT_SHEET_LABEL_MARGING,
+                                           borderwidth = MemHeaderLab.DEFAULT_SHEET_HEADER_LABEL_BW,
+                                           pady=MemLabel.DEFAULT_SHEET_LABEL_MARGING, **kwargs)
+
+
+class MemLabel(tkinter.Label):
+    DEFAULT_SHEET_LABEL_WIDTH = UI_MEM_ELEMENTS_WIDTH
+    DEFAULT_SHEET_LABEL_MARGING = 3
+
+    def __init__(self, master, **kwargs):
+        super(MemLabel, self).__init__(master, fg=DARCULA_DEFAULT_FG, bg=DARCULA_DEFAULT_BG,
+                                       width=MemLabel.DEFAULT_SHEET_LABEL_WIDTH, relief="raised",
+                                       padx=MemLabel.DEFAULT_SHEET_LABEL_MARGING,
+                                       pady=MemLabel.DEFAULT_SHEET_LABEL_MARGING, **kwargs)
+
+
+class MemUnit(tkinter.Entry):
+    DEFAULT_SHEET_UNIT_WIDTH = UI_MEM_ELEMENTS_WIDTH
+    DEFAULT_SHEET_UNIT_MARGING = 3
+    DEFAULT_SHEET_UNIT_BW = 2
+
+    def __init__(self, master, **kwargs):
+        super(MemUnit, self).__init__(master, fg=DARCULA_DEFAULT_FG, bg=DARCULA_DEFAULT_SELECT_BD,
+                                      borderwidth=MemUnit.DEFAULT_SHEET_UNIT_BW, relief="solid",
+                                      width=MemUnit.DEFAULT_SHEET_UNIT_WIDTH, **kwargs)
+
+
+class LoadFileButton(FlatButton):
+    def __init__(self, master, **kwargs):
+        self.load_image = ImageTk.PhotoImage(
+            Image.open("./.image/.memory/load.png").resize((16, 16), Image.ANTIALIAS))
+        self.load_dark_image = ImageTk.PhotoImage(
+            Image.open("./.image/.memory/load_dark.png").resize((16, 16), Image.ANTIALIAS))
+        super(LoadFileButton, self).__init__(master, image=self.load_dark_image, state=tkinter.DISABLED, **kwargs)
+        self.unbindable()
+
+    def enable(self):
+        self.configure(image=self.load_image, state=tkinter.NORMAL)
+        self.bindable()
+
+    def disable(self):
+        self.configure(image=self.load_dark_image, state=tkinter.DISABLED)
+        self.unbindable()
+
+
+class StoreFileButton(FlatButton):
+    def __init__(self, master, **kwargs):
+        self.store_image = ImageTk.PhotoImage(
+            Image.open("./.image/.memory/store.png").resize((16, 16), Image.ANTIALIAS))
+        self.store_dark_image = ImageTk.PhotoImage(
+            Image.open("./.image/.memory/store_dark.png").resize((16, 16), Image.ANTIALIAS))
+        super(StoreFileButton, self).__init__(master, image=self.store_dark_image, state=tkinter.DISABLED, **kwargs)
+        self.unbindable()
+
+    def enable(self):
+        self.configure(image=self.store_image, state=tkinter.NORMAL)
+        self.bindable()
+
+    def disable(self):
+        self.configure(image=self.store_dark_image, state=tkinter.DISABLED)
+        self.unbindable()
+
+
+class AddFileButton(FlatButton):
+    def __init__(self, master, **kwargs):
+        self.add_image = ImageTk.PhotoImage(
+            Image.open("./.image/.memory/add.png").resize((16, 16), Image.ANTIALIAS))
+        self.add_dark_image = ImageTk.PhotoImage(
+            Image.open("./.image/.memory/add_dark.png").resize((16, 16), Image.ANTIALIAS))
+        super(AddFileButton, self).__init__(master, image=self.add_dark_image, state=tkinter.DISABLED, **kwargs)
+        self.unbindable()
+
+    def enable(self):
+        self.configure(image=self.add_image, state=tkinter.NORMAL)
+        self.bindable()
+
+    def disable(self):
+        self.configure(image=self.add_dark_image, state=tkinter.DISABLED)
+        self.unbindable()
+
+
+class SubFileButton(FlatButton):
+    def __init__(self, master, **kwargs):
+        self.sub_image = ImageTk.PhotoImage(
+            Image.open("./.image/.memory/sub.png").resize((16, 16), Image.ANTIALIAS))
+        self.sub_dark_image = ImageTk.PhotoImage(
+            Image.open("./.image/.memory/sub_dark.png").resize((16, 16), Image.ANTIALIAS))
+        super(SubFileButton, self).__init__(master, image=self.sub_dark_image, state=tkinter.DISABLED, **kwargs)
+        self.unbindable()
+
+    def enable(self):
+        self.configure(image=self.sub_image, state=tkinter.NORMAL)
+        self.bindable()
+
+    def disable(self):
+        self.configure(image=self.sub_dark_image, state=tkinter.DISABLED)
+        self.unbindable()
+
+
+class RefreshFileButton(FlatButton):
+    def __init__(self, master, **kwargs):
+        self.refresh_image = ImageTk.PhotoImage(
+            Image.open("./.image/.refresh/refresh.png").resize((16, 16), Image.ANTIALIAS))
+        self.refresh_dark_image = ImageTk.PhotoImage(
+            Image.open("./.image/.refresh/refresh-dark.png").resize((16, 16), Image.ANTIALIAS))
+        super(RefreshFileButton, self).__init__(master, image=self.refresh_dark_image, state=tkinter.DISABLED, **kwargs)
+        self.unbindable()
+
+    def enable(self):
+        self.configure(image=self.refresh_image, state=tkinter.NORMAL)
+        self.bindable()
+
+    def disable(self):
+        self.configure(image=self.refresh_dark_image, state=tkinter.DISABLED)
+        self.unbindable()
 
 
 if __name__ == "__main__":

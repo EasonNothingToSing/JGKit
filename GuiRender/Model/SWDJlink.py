@@ -37,6 +37,20 @@ class SWDJlink(pylink.JLink):
         except errors.JLinkWriteException:
             return False
 
+    def read_mem(self, addr, rlen):
+        self.clear_error()
+        try:
+            return self.memory_read32(addr, rlen)
+        except errors.JLinkReadException:
+            return False
+
+    def write_mem(self, addr, wdata):
+        self.clear_error()
+        try:
+            return self.memory_write32(addr, wdata)
+        except errors.JLinkWriteException:
+            return False
+
     def is_connected(self):
         return self.connected()
 
