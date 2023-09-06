@@ -182,7 +182,8 @@ class Control:
         # self.log.pack(expand=True, fill=tkinter.BOTH)
 
         # Memory Frame
-        self.memory_value = {}
+        self.mem_chunk_dir = {}
+
         self.mem_frame = View.MemFrame(self.debug_frame)
         self.mem_frame.pack(expand=True, fill=tkinter.BOTH, side=tkinter.RIGHT)
         self.mem_control_frame = View.MemControlFrame(self.mem_frame)
@@ -212,6 +213,9 @@ class Control:
         self.memory.pack(expand=True, fill=tkinter.BOTH)
         self.memory.bind("<Double-Button-1>", self._mem_sheet_double_click)
         self.memory.bind("<Delete>", self._mem_sheet_delete)
+
+        self.mem_canvas = None
+        self.mem_canvas_frame = None
 
         # logging.getLogger().addHandler(WidgetLogger.WidgetLogger(self.log))
 
@@ -646,10 +650,8 @@ class Control:
 
     def _swd_connected(self):
         if self.swd_handler.is_connected():
-            logging.debug("Connected")
             self._swd_connected_handler = self._master.after(self._swd_connected_time, self._swd_connected)
         else:
-            logging.debug("Disconnected")
             self.stop()
 
     def write32_plus(self, tpl, data):
@@ -900,71 +902,116 @@ class Control:
         self.memory.tab(tab_id, text=new_text)
         entry.destroy()
 
-    def _mem_create_editable_excel(self, rows, cols, vector):
+    def _mem_create_editable_excel(self, address):
         parent = ttk.Frame(self.memory)
-        self.memory_value = {parent: {}}
-        self.memory_value[parent]["parameter"] = {"Start": vector["Start"]}
-        parent.mem_parameter = {"Start": vector["Start"], "Length": rows*cols}
-        self.memory.add(parent, text=vector["Start"])
+        self.memory.add(parent, text=hex(address))
+        self.mem_chunk_dir[parent] = {"address": address, "cur_address": address}
 
-        header_frame = View.MemHeaderFrame(parent)
-        header_frame.pack(fill=tkinter.X, side=tkinter.TOP)
+        # Create header memory
+        self.mem_header_frame = View.MemHeaderFrame(parent)
+        self.mem_header_frame.pack(fill=tkinter.X, side=tkinter.TOP)
 
-        for col in range(cols + 1):
+        for col in range(View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX + 1):
             if col == 0:
-                label = View.MemHeaderLab(header_frame, text="Address")
+                label = View.MemHeaderLab(self.mem_header_frame, text="Address")
                 label.grid(row=0, column=col, sticky="nsew")
                 continue
 
-            label = View.MemHeaderLab(header_frame, text=f"{(col-1)*4}-{col*4 - 1}")
+            label = View.MemHeaderLab(self.mem_header_frame, text=f"{(col-1)*4}-{col*4 - 1}")
             label.grid(row=0, column=col, sticky="nsew")
 
         # 创建Canvas和滚动条
-        canvas = tkinter.Canvas(parent, bg=View.DARCULA_DEFAULT_BG)
-        canvas.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
+        self.mem_canvas = tkinter.Canvas(parent, bg=View.DARCULA_DEFAULT_BG)
+        self.mem_canvas.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
 
-        scrollbar_y = tkinter.Scrollbar(parent, orient="vertical", command=canvas.yview)
+        scrollbar_y = tkinter.Scrollbar(parent, orient="vertical", command=self.mem_canvas.yview)
         scrollbar_y.pack(side=tkinter.RIGHT, fill=tkinter.Y)
 
-        canvas.configure(yscrollcommand=scrollbar_y.set)
-        canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
+        self.mem_canvas.configure(yscrollcommand=scrollbar_y.set)
+        self.mem_canvas.bind('<Configure>', lambda e: self.mem_canvas.configure(scrollregion=self.mem_canvas.bbox('all')))
+
+        def __on_mousewheel_callback(event):
+            logging.debug("[Event]<Mousewheel> %d" % (event.delta, ))
+            self.mem_canvas.yview_scroll(-1 if event.delta > 0 else 1, "units")
+            logging.debug("[Event]<Mousewheel> Height from %f - %f" %
+                          (self.mem_canvas.yview()[0], self.mem_canvas.yview()[1]))
+
+            if self.mem_canvas.yview()[1] == 1.0:
+                self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["cur_address"] \
+                    += View.UI_MEM_ELEMENTS_ITEM_VERTICAL_MAX * View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX * 4
+                logging.debug("[Event]<Mousewheel> To button address -> %s" %
+                              (hex(self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["cur_address"])))
+                self._mem_load_next_chunk(None)
+                self.mem_canvas.yview_moveto(0)
+            elif self.mem_canvas.yview()[0] == 0.0:
+                self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["cur_address"] \
+                    -= View.UI_MEM_ELEMENTS_ITEM_VERTICAL_MAX * View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX * 4
+                logging.debug("[Event]<Mousewheel> To top address -> %s" %
+                              (hex(self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["cur_address"])))
+                self._mem_load_next_chunk(None)
+                self.mem_canvas.yview_moveto(1.0)
+
+        def __bound_mousewheel(event):
+            self.mem_canvas.bind_all("<MouseWheel>", __on_mousewheel_callback)
+
+        def __unbound_mousewheel(event):
+            self.mem_canvas.unbind_all("<MouseWheel>")
+
+        self.mem_canvas.bind('<Enter>', __bound_mousewheel)
+        self.mem_canvas.bind('<Leave>', __unbound_mousewheel)
 
         # 在Canvas内创建一个Frame来放置表格
-        grid_frame = ttk.Frame(canvas)
-        canvas.create_window((0, 0), window=grid_frame, anchor="nw")
+        self.mem_canvas_frame = ttk.Frame(self.mem_canvas)
+        self.mem_canvas.create_window((0, 0), window=self.mem_canvas_frame, anchor="nw")
 
-        mem_start = vector["Start"]
-        mem_value = vector["Memory"]
-        self.memory_value[parent]["entry"] = {}
+        self._mem_load_next_chunk(parent)
+
+    def _mem_load_next_chunk(self, parent):
+        if parent:
+            chunk = self.mem_chunk_dir[parent]
+        else:
+            chunk = self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]
+        address = chunk["cur_address"]
+        logging.debug("Auto load next chunk from memory -> %d" % (address, ))
+        chunk["entry"] = {}
+
+        rows = View.UI_MEM_ELEMENTS_ITEM_VERTICAL_MAX
+        cols = View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX
+
+        chunk["value"] = self.swd_handler.read_mem(address, rows*cols) # Get word
+
+        label = View.MemLabel(self.mem_canvas_frame, text="hex(address + i * cols * 4)")
+        label.grid(row=0, column=0, sticky="nsew")
 
         for i in range(rows):
             for j in range(cols + 1):
                 if j == 0:
-                    label = View.MemLabel(grid_frame, text=hex(int(mem_start, base=16) + i * cols * 4))
+                    label = View.MemLabel(self.mem_canvas_frame, text=hex(address + i * cols * 4))
                 else:
                     def on_entry_change(name, index, mode):
-                        entry = self.memory_value[self.memory.nametowidget(self.memory.select())]["entry"][name]
+                        entry = chunk["entry"][name]
                         entry.config(fg="red")
 
                     entry_var = tkinter.StringVar()
-                    entry = View.MemUnit(grid_frame, textvariable=entry_var)
-                    self.memory_value[parent]["entry"][entry_var._name] = entry
+                    entry = View.MemUnit(self.mem_canvas_frame, textvariable=entry_var)
+                    chunk["entry"][entry_var._name] = entry
                     try:
-                        value = hex(mem_value[i*cols + j-1])
+                        value = hex(chunk["value"][i*cols + j-1])
                     except TypeError:
                         value = "?"
 
                     entry.insert(0, value)
                     entry_var.trace("w", on_entry_change)
                     entry.grid(row=i, column=j, sticky="nsew")
-                    entry.bind("<Return>", lambda event, address=hex(int(mem_start, base=16) + (i * cols + j - 1) * 4): self.__mem_unit_entry_return_callback(event, address))
-                    grid_frame.grid_columnconfigure(j, weight=1)
+                    entry.bind("<Return>", lambda event, address=hex(address + (i * cols + j - 1) * 4): self.
+                               __mem_unit_entry_return_callback(event, address))
+                    self.mem_canvas_frame.grid_columnconfigure(j, weight=1)
                     continue
                 label.grid(row=i, column=j, sticky="nsew")
 
         # 设置行权重
         for i in range(rows):
-            grid_frame.grid_rowconfigure(i, weight=1)
+            self.mem_canvas_frame.grid_rowconfigure(i, weight=1)
 
     def _mem_popup_address_entry(self):
         """弹出一个窗口，窗口内包含标签 'Address' 和一个输入框。"""
@@ -979,41 +1026,21 @@ class Control:
         address_entry.grid(row=0, column=1, padx=10, pady=5)
         address_entry.focus_set()
 
-        # 添加 'Length' 标签和输入框
-        length_label = ttk.Label(top, text="Length:")
-        length_label.grid(row=1, column=0, padx=10, pady=5, sticky=tkinter.W)
-
-        length_entry = ttk.Entry(top, width=30)
-        length_entry.grid(row=1, column=1, padx=10, pady=5)
-
         def confirm_and_close():
             """确认并关闭窗口的函数"""
             address = address_entry.get()  # 获取输入框中的地址
-            length = length_entry.get()  # 获取长度输入框中的值
 
             try:
                 address = int(address)
             except ValueError:
                 address = int(address, base=16)
 
-            try:
-                length = int(length)
-            except ValueError:
-                length = int(length, base=16)
-
-            self.__mem_popup_confirm_callback(address, length)  # 调用回调函数
+            self._mem_create_editable_excel(address)
             top.destroy()  # 关闭窗口
 
         # 添加确认按钮
         confirm_btn = ttk.Button(top, text="Confirm", command=confirm_and_close)
         confirm_btn.grid(row=2, columnspan=2, pady=10)
-
-    def __mem_popup_confirm_callback(self, address, length):
-        mem_vector = {"Start": 0, "Memory": self.swd_handler.read_mem(address, length)}
-        address = hex(address)
-        mem_vector["Start"] = address
-
-        self._mem_create_editable_excel(length//4, 4, mem_vector)
 
     def __mem_unit_entry_return_callback(self, event, address):
         entry = event.widget
@@ -1022,8 +1049,11 @@ class Control:
             value = int(value)
         except ValueError:
             value = int(value, base=16)
-        self.swd_handler.write32(int(address, base=16), value)
-        new_value = int(self.swd_handler.read32(int(address, base=16)))
+
+        logging.debug("[Event]<return> Address %d -> Value %d" % (address, value))
+        self.swd_handler.write32(address, value)
+        new_value = int(self.swd_handler.read32(address))
+
         entry.delete(0, tkinter.END)
         entry.insert(0, hex(new_value))
 
