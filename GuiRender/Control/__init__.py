@@ -15,6 +15,7 @@ import json
 import os
 import global_var
 import shutil
+import time
 
 
 class Control:
@@ -30,7 +31,8 @@ class Control:
         basename, ext = os.path.splitext(global_var.get_value("excel"))
         # Check xls file or xlsx file is exists
         if os.path.exists(os.path.join("./.data/xls", basename + ".xls")):
-            shutil.copy(os.path.join("./.data/xls", basename + ".xls"), os.path.join("./.data/xls/.temp", basename + ".xls"))
+            shutil.copy(os.path.join("./.data/xls", basename + ".xls"),
+                        os.path.join("./.data/xls/.temp", basename + ".xls"))
         elif os.path.exists(os.path.join("./.data/xls", basename + ".xlsx")):
             Xlsx2Xls.xlsxfileconvert(os.path.join("./.data/xls", basename + ".xlsx"))
 
@@ -375,7 +377,7 @@ class Control:
             self.level = 2
             self.cur_iid = self.display_tree.insert(self.parent, "end", iid=None, text=item["Name"],
                                                     image=self._image_tag[self.level], values=(
-                "", "%d:%d" % (int(item['Start']), int(item['End'])), item["Property"]),
+                    "", "%d:%d" % (int(item['Start']), int(item['End'])), item["Property"]),
                                                     tags=(self.level, item["Description"], self.current_address))
 
     def _expand(self, item):
@@ -403,7 +405,7 @@ class Control:
             name = self._locate_indexs_pattern.sub(str(num), i["Name"])
             self.cur_iid = self.display_tree.insert(self.parent, "end", iid=None, text=name,
                                                     image=self._image_tag[self.level], values=(
-                "", "%d:%d" % (int(i['Start']), int(i['End'])), i["Property"]),
+                    "", "%d:%d" % (int(i['Start']), int(i['End'])), i["Property"]),
                                                     tags=(self.level, i["Description"], self.current_address))
 
     def connected(self):
@@ -872,24 +874,30 @@ class Control:
         self.refresh()
 
     def _mem_sheet_double_click(self, event):
+        logging.debug("[Event] Double Click")
         try:
             tab_id = self.memory.index('@%d,%d' % (event.x, event.y))
         except:
             self._mem_popup_address_entry()
             return
 
-        tab_text = self.memory.tab(tab_id, 'text')
+        label_x = int(self.memory.winfo_x())
 
         # 估计标签的宽度和位置
-        label_width = len(tab_text) * int(View.UI_FONT_SIZE_PIXEL)  # 假设每个字符大约7像素宽
-        label_x = str(int(self.memory.winfo_x()) + int(tab_id) * label_width)
+        for i in range(tab_id):
+            tab_text = self.memory.tab(i, 'text')
+            label_width = len(tab_text) * (int(View.UI_FONT_SIZE_PIXEL) - 5) - 3  # 假设每个字符大约7像素宽
+            label_x += label_width
+
+        tab_text = self.memory.tab(tab_id, 'text')
+        label_width = len(tab_text) * (int(View.UI_FONT_SIZE_PIXEL) - 5) - 3
 
         # 创建一个Entry小部件来编辑工作表名字
         entry = ttk.Entry(self.memory)
         entry.insert(0, tab_text)
         entry.bind("<Return>", lambda e: self.__mem_sheet_finish_edit_name(tab_id, entry))
         entry.bind("<FocusOut>", lambda e: self.__mem_sheet_finish_edit_name(tab_id, entry))
-        entry.place(x=label_x, y=self.memory.winfo_y(), width=label_width, height=30)
+        entry.place(x=str(label_x), y=0, width=label_width, height=30)
         entry.focus_set()
 
     def _mem_sheet_delete(self, event):
@@ -905,11 +913,13 @@ class Control:
     def _mem_create_editable_excel(self, address):
         parent = ttk.Frame(self.memory)
         self.memory.add(parent, text=hex(address))
-        self.mem_chunk_dir[parent] = {"address": address, "cur_address": address}
+        self.mem_chunk_dir[parent] = {"address": address, "head_address": address,
+                                      "tail_address": address + View.UI_MEM_ELEMENTS_ITEM_VERTICAL_MAX * View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX * 4}
 
         # Create header memory
         self.mem_header_frame = View.MemHeaderFrame(parent)
         self.mem_header_frame.pack(fill=tkinter.X, side=tkinter.TOP)
+        self.mem_chunk_dir[parent]["header_frame"] = self.mem_header_frame
 
         for col in range(View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX + 1):
             if col == 0:
@@ -917,38 +927,66 @@ class Control:
                 label.grid(row=0, column=col, sticky="nsew")
                 continue
 
-            label = View.MemHeaderLab(self.mem_header_frame, text=f"{(col-1)*4}-{col*4 - 1}")
+            label = View.MemHeaderLab(self.mem_header_frame, text=f"{(col - 1) * 4}-{col * 4 - 1}")
             label.grid(row=0, column=col, sticky="nsew")
 
         # 创建Canvas和滚动条
         self.mem_canvas = tkinter.Canvas(parent, bg=View.DARCULA_DEFAULT_BG)
         self.mem_canvas.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
+        self.mem_chunk_dir[parent]["canvas"] = self.mem_canvas
 
         scrollbar_y = tkinter.Scrollbar(parent, orient="vertical", command=self.mem_canvas.yview)
-        scrollbar_y.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+        # scrollbar_y.pack(side=tkinter.RIGHT, fill=tkinter.Y)
 
         self.mem_canvas.configure(yscrollcommand=scrollbar_y.set)
-        self.mem_canvas.bind('<Configure>', lambda e: self.mem_canvas.configure(scrollregion=self.mem_canvas.bbox('all')))
+        self.mem_canvas.bind('<Configure>',
+                             lambda e: self.mem_canvas.configure(scrollregion=self.mem_canvas.bbox('all')))
 
         def __on_mousewheel_callback(event):
-            logging.debug("[Event]<Mousewheel> %d" % (event.delta, ))
+            # logging.debug("[Event]<Mousewheel> %d" % (event.delta,))
             self.mem_canvas.yview_scroll(-1 if event.delta > 0 else 1, "units")
             logging.debug("[Event]<Mousewheel> Height from %f - %f" %
                           (self.mem_canvas.yview()[0], self.mem_canvas.yview()[1]))
 
+            # logging.debug("[Event]<Mousewheel> Canvas height: %s" % (self.mem_canvas.winfo_height(), ))
+
             if self.mem_canvas.yview()[1] == 1.0:
-                self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["cur_address"] \
-                    += View.UI_MEM_ELEMENTS_ITEM_VERTICAL_MAX * View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX * 4
+                offset = self.mem_canvas.winfo_height() // View.MemLabel.DEFAULT_SHEET_LABEL_HEIGHT
+                address_offset = offset * View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX * 4 # Get whole visiable windows address diff
+
+                # Calculate the head address depending the offset address
+                head_address = self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["tail_address"] - address_offset
+                # The tail address depending the default length increase
+                self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["tail_address"] \
+                    += (View.UI_MEM_ELEMENTS_ITEM_VERTICAL_MAX * View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX * 4 - address_offset)
+                self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] = head_address
+
                 logging.debug("[Event]<Mousewheel> To button address -> %s" %
-                              (hex(self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["cur_address"])))
+                              (hex(self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"])))
+
+                # Load next chunk
                 self._mem_load_next_chunk(None)
-                self.mem_canvas.yview_moveto(0)
+
+                # Move scroll
+                self.mem_canvas.yview_moveto(0.0)
             elif self.mem_canvas.yview()[0] == 0.0:
-                self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["cur_address"] \
-                    -= View.UI_MEM_ELEMENTS_ITEM_VERTICAL_MAX * View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX * 4
+                offset = self.mem_canvas.winfo_height() // View.MemLabel.DEFAULT_SHEET_LABEL_HEIGHT
+                address_offset = offset * View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX * 4
+
+                tail_address = self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())][
+                                   "head_address"] + address_offset
+
+                self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] \
+                    -= (View.UI_MEM_ELEMENTS_ITEM_VERTICAL_MAX * View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX * 4 - address_offset)
+                self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["tail_address"] = tail_address
+
                 logging.debug("[Event]<Mousewheel> To top address -> %s" %
-                              (hex(self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["cur_address"])))
+                              (hex(self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"])))
+
+                # Load next chunk
                 self._mem_load_next_chunk(None)
+
+                # Move scroll
                 self.mem_canvas.yview_moveto(1.0)
 
         def __bound_mousewheel(event):
@@ -964,29 +1002,42 @@ class Control:
         self.mem_canvas_frame = ttk.Frame(self.mem_canvas)
         self.mem_canvas.create_window((0, 0), window=self.mem_canvas_frame, anchor="nw")
 
+        self.mem_chunk_dir[parent]["canvas_frame"] = self.mem_canvas_frame
+
+        start = time.time()
         self._mem_load_next_chunk(parent)
+        end = time.time()
+        logging.debug("[TIME] Load chunk cost %f" % (end - start))
 
     def _mem_load_next_chunk(self, parent):
         if parent:
             chunk = self.mem_chunk_dir[parent]
         else:
             chunk = self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]
-        address = chunk["cur_address"]
-        logging.debug("Auto load next chunk from memory -> %d" % (address, ))
+        address = chunk["head_address"]
+        tail_address = chunk["tail_address"]
+        length = tail_address - address
+        logging.debug("Auto load next chunk from memory -> %s : %s" % (hex(address), hex(tail_address)))
         chunk["entry"] = {}
+        chunk["value"] = []
 
-        rows = View.UI_MEM_ELEMENTS_ITEM_VERTICAL_MAX
+        self.mem_header_frame = chunk["header_frame"]
+        self.mem_canvas_frame = chunk["canvas_frame"]
+        self.mem_canvas = chunk["canvas"]
+
+        rows = int(length // (View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX * 4))
         cols = View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX
 
-        chunk["value"] = self.swd_handler.read_mem(address, rows*cols) # Get word
-
-        label = View.MemLabel(self.mem_canvas_frame, text="hex(address + i * cols * 4)")
-        label.grid(row=0, column=0, sticky="nsew")
+        start = time.time()
+        chunk["value"] = self.swd_handler.read_mem(address, rows * cols)  # Get word
+        end = time.time()
+        logging.debug("[TIME] Read memory cost %f" % (end - start))
 
         for i in range(rows):
             for j in range(cols + 1):
                 if j == 0:
                     label = View.MemLabel(self.mem_canvas_frame, text=hex(address + i * cols * 4))
+                    label.grid(row=i, column=j, sticky="nsew")
                 else:
                     def on_entry_change(name, index, mode):
                         entry = chunk["entry"][name]
@@ -996,18 +1047,16 @@ class Control:
                     entry = View.MemUnit(self.mem_canvas_frame, textvariable=entry_var)
                     chunk["entry"][entry_var._name] = entry
                     try:
-                        value = hex(chunk["value"][i*cols + j-1])
+                        value = hex(chunk["value"][i * cols + j - 1])
                     except TypeError:
                         value = "?"
 
                     entry.insert(0, value)
                     entry_var.trace("w", on_entry_change)
                     entry.grid(row=i, column=j, sticky="nsew")
-                    entry.bind("<Return>", lambda event, address=hex(address + (i * cols + j - 1) * 4): self.
+                    entry.bind("<Return>", lambda event, address=address + (i * cols + j - 1) * 4: self.
                                __mem_unit_entry_return_callback(event, address))
                     self.mem_canvas_frame.grid_columnconfigure(j, weight=1)
-                    continue
-                label.grid(row=i, column=j, sticky="nsew")
 
         # 设置行权重
         for i in range(rows):
@@ -1050,7 +1099,7 @@ class Control:
         except ValueError:
             value = int(value, base=16)
 
-        logging.debug("[Event]<return> Address %d -> Value %d" % (address, value))
+        logging.debug("[Event]<return> Address %s -> Value %d" % (hex(address), value))
         self.swd_handler.write32(address, value)
         new_value = int(self.swd_handler.read32(address))
 
@@ -1130,7 +1179,7 @@ class Control:
             cur_memory = "0x0"
 
         def on_entry_start(*args):
-            logging.info("Entry start value change to %s" % (address_start_var.get(), ))
+            logging.info("Entry start value change to %s" % (address_start_var.get(),))
             try:
                 end_address = int(address_end_var.get())
             except ValueError:

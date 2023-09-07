@@ -506,6 +506,7 @@ class MemHeaderLab(tkinter.Label):
 class MemLabel(tkinter.Label):
     DEFAULT_SHEET_LABEL_WIDTH = UI_MEM_ELEMENTS_WIDTH
     DEFAULT_SHEET_LABEL_MARGING = 3
+    DEFAULT_SHEET_LABEL_HEIGHT = 27
 
     def __init__(self, master, **kwargs):
         super(MemLabel, self).__init__(master, fg=DARCULA_DEFAULT_FG, bg=DARCULA_DEFAULT_BG,
