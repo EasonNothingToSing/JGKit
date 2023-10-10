@@ -1009,11 +1009,11 @@ class Control:
 
                 self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["tail_address"] = tail_address
 
-                if self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] < 0:
-                    mem_diff = self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] - 0
-                    self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] = 0
-
-                    self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["tail_address"] += mem_diff
+                # if self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] < 0:
+                #     mem_diff = self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] - 0
+                #     self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] = 0
+                #
+                #     self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["tail_address"] += mem_diff
 
                 logging.debug("[Event]<Mousewheel> To top address -> %s" %
                               (hex(self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"])))

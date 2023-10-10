@@ -10,7 +10,9 @@ import pygame
 import pygame_menu
 
 
-__CHIP_MENU__ = [("Venus", "venus-configure.json"), ("Vega", "vega-configure.json"), ("VegaP", "vegap-configure.json"), ("Arcs", "arcs-configure.json"), ("Arcs-B0", "arcs-b0-configure.json")]
+__CHIP_MENU__ = [("Venus", "venus-configure.json"), ("Vega", "vega-configure.json"), ("VegaP", "vegap-configure.json"),
+                 ("Arcs", "arcs-configure.json"), ("Arcs-B0", "arcs-b0-configure.json"),
+                 ("Arcs-C0", "arcs-c0-configure.json")]
 xls_config_name = __CHIP_MENU__[0][1]
 
 
@@ -38,6 +40,7 @@ if __name__ == "__main__":
                 global_var.set_value(str(key), dct[key])
         logging.debug(global_var.get_value("name"))
         logging.debug(global_var.get_value("core"))
+        logging.debug(global_var.get_value("tif"))
         logging.debug(global_var.get_value("excel"))
         logging.debug(global_var.get_value("sheets"))
 

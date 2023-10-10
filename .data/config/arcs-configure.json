@@ -1,6 +1,7 @@
 {
   "name": "Arcs",
   "core": "CORTEX-M33",
+  "tif": "SWD",
   "excel": "ARCS_SoC_Memory_Mapping.xls",
   "sheets": [
     "AP Peripheral AddrMapping"

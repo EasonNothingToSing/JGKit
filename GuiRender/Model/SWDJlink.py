@@ -6,7 +6,7 @@ import global_var
 
 __all__ = ["SWDJlink", ]
 
-SWD_DEBUG_EN = 1
+SWD_DEBUG_EN = 0
 
 
 def swd_debug_decorater(func):
@@ -54,7 +54,10 @@ class SWDJlink(pylink.JLink):
         super(SWDJlink, self).__init__(lib=self.__jlink_dll)
         self.core = global_var.get_value("core")
         self.open()
-        self.set_tif(pylink.enums.JLinkInterfaces.SWD)
+        if global_var.get_value("tif") == "JTAG":
+            self.set_tif(pylink.enums.JLinkInterfaces.JTAG)
+        else:
+            self.set_tif(pylink.enums.JLinkInterfaces.SWD)
         self.connect(self.core)
         if self.connected():
             logging.debug("Connect to the target")
