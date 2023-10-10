@@ -56,3 +56,4 @@ if __name__ == "__main__":
     menu.add.button('Quit', pygame_menu.events.EXIT)
 
     menu.mainloop(surface)
+

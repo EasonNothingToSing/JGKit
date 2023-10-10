@@ -209,8 +209,10 @@ class Control:
 
         self.mem_control_refresh_button = View.RefreshFileButton(self.mem_control_frame)
         self.mem_control_refresh_button.pack(side=tkinter.LEFT, anchor="e", padx="4")
-        self.mem_control_refresh_button.configure(command=self.mem_export_button_callback)
+        self.mem_control_refresh_button.configure(command=self.mem_refresh_button_callback)
 
+        self.memory_refresh_time = 500
+        self.memory_refresh_handler = None
         self.memory = View.MemNoteBook(self.mem_frame)
         self.memory.pack(expand=True, fill=tkinter.BOTH)
         self.memory.bind("<Double-Button-1>", self._mem_sheet_double_click)
@@ -468,7 +470,7 @@ class Control:
                     else:
                         return False
 
-                elif func.__name__ == "refresh":
+                elif func.__name__ == "refresh" or func.__name__ == "mem_refresh":
                     if func(self, *args, **kwargs):
                         return True
                     else:
@@ -491,6 +493,32 @@ class Control:
         # If trigger an error when read some address, then return False
         logging.debug("<Refresh>")
         self._sub_refresh()
+        return True
+
+    @control_button_stage_machine
+    def mem_refresh(self):
+        chunk = self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]
+        logging.debug("<Mem><Refresh> Address -> %s - %s" % (hex(chunk["head_address"]), hex(chunk["tail_address"])))
+        length = chunk["tail_address"] - chunk["head_address"]
+        mem_list = self.swd_handler.read_mem(chunk["head_address"], length)
+
+        if len(mem_list) != len(chunk["value"]):
+            logging.error("<MEM><Refresh> Prefetch length not equal current length")
+
+            return False
+
+        diff_list = []
+
+        for i in range(len(mem_list)):
+            if mem_list[i] != chunk["value"][i]:
+                diff_list.append(i)
+
+        if diff_list:
+            for i in diff_list:
+                address = str(chunk["head_address"] + 4*i)
+                chunk["entry"][address].delete(0, tkinter.END)
+                chunk["entry"][address].insert(0, hex(mem_list[i]))
+
         return True
 
     @control_button_stage_machine
@@ -608,7 +636,7 @@ class Control:
 
     def refresh_inspection(self):
         # refresh
-        logging.info("[Callback]")
+        logging.info("[Event] Refresh callback")
         if self.refresh():
             self._refresh_timer_handler = self.auto_check.after(self.refersh_time, self.refresh_inspection)
         else:
@@ -978,7 +1006,14 @@ class Control:
 
                 self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] \
                     -= (View.UI_MEM_ELEMENTS_ITEM_VERTICAL_MAX * View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX * 4 - address_offset)
+
                 self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["tail_address"] = tail_address
+
+                if self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] < 0:
+                    mem_diff = self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] - 0
+                    self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] = 0
+
+                    self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["tail_address"] += mem_diff
 
                 logging.debug("[Event]<Mousewheel> To top address -> %s" %
                               (hex(self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"])))
@@ -1020,6 +1055,7 @@ class Control:
         logging.debug("Auto load next chunk from memory -> %s : %s" % (hex(address), hex(tail_address)))
         chunk["entry"] = {}
         chunk["value"] = []
+        self.memory_refresh_handler = self.memory.after(self.memory_refresh_time, self._mem_auto_refresh)
 
         self.mem_header_frame = chunk["header_frame"]
         self.mem_canvas_frame = chunk["canvas_frame"]
@@ -1064,7 +1100,7 @@ class Control:
 
     def _mem_popup_address_entry(self):
         """弹出一个窗口，窗口内包含标签 'Address' 和一个输入框。"""
-        top = tkinter.Toplevel(self._master)  # 创建新的窗口
+        top = View.TopLevelBase(self._master)  # 创建新的窗口
         top.title("Enter Address")
 
         # 添加 'Address' 标签和输入框
@@ -1117,7 +1153,7 @@ class Control:
     @control_button_stage_machine
     def mem_import_button_callback(self):
         """弹出一个窗口，窗口内包含标签 'Address' 和一个输入框。"""
-        top = tkinter.Toplevel(self._master)  # 创建新的窗口
+        top = View.TopLevelBase(self._master)  # 创建新的窗口
         top.title("Import Memory")
 
         # 添加 'Address' 标签和输入框
@@ -1170,8 +1206,9 @@ class Control:
 
     @control_button_stage_machine
     def mem_export_button_callback(self):
-        top = tkinter.Toplevel(self._master)  # 创建新的窗口
+        top = View.TopLevelBase(self._master)  # 创建新的窗口
         top.title("Export Memory")
+
         cur_tab = self.memory.nametowidget(self.memory.select())
         try:
             cur_memory = cur_tab.mem_parameter["Start"]
@@ -1218,7 +1255,10 @@ class Control:
                 except ValueError:
                     return
 
-            length_var.trace_remove("write", length_cb)
+            try:
+                length_var.trace_remove("write", length_cb)
+            except:
+                pass
             length_var.set(str(end_address - start_address))
             length_var.trace_add("write", on_entry_length)
 
@@ -1325,6 +1365,9 @@ class Control:
         confirm_btn = ttk.Button(top, text="Confirm", command=confirm_and_close)
         confirm_btn.grid(row=2, columnspan=2, pady=10)
 
-    @control_button_stage_machine
     def mem_refresh_button_callback(self):
-        pass
+        self.mem_refresh()
+
+    def _mem_auto_refresh(self):
+        self.mem_refresh()
+        self.memory_refresh_handler = self.memory.after(self.memory_refresh_time, self._mem_auto_refresh)

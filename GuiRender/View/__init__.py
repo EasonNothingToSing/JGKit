@@ -616,6 +616,17 @@ class RefreshFileButton(FlatButton):
         self.unbindable()
 
 
+class TopLevelBase(tkinter.Toplevel):
+    def __init__(self, master, **kwargs):
+        super(TopLevelBase, self).__init__(master=master, **kwargs)
+        self.attributes("-topmost", True)
+
+        x = (master.winfo_screenwidth() // 2)
+        y = (master.winfo_screenheight() // 2)
+
+        self.geometry(f"+{x}+{y}")
+
+
 if __name__ == "__main__":
     root = tkinter.Tk()
     # EntryPopup(root, "test").pack()

@@ -6,7 +6,48 @@ import global_var
 
 __all__ = ["SWDJlink", ]
 
+SWD_DEBUG_EN = 1
 
+
+def swd_debug_decorater(func):
+    def wrapper(*args, **kwargs):
+        if SWD_DEBUG_EN:
+            if func.__name__ == "read32":
+                return 0
+            elif func.__name__ == "write32" or func.__name__ == "write_mem" or func.__name__ == "is_connected":
+                return True
+            elif func.__name__ == "read_mem":
+                try:
+                    return [0] * kwargs["rlen"]
+                except KeyError:
+                    return [0] * args[2]
+            elif func.__name__ == "__init__":
+                return object()
+            else:
+                pass
+        else:
+            return func(*args, **kwargs)
+
+    return wrapper
+
+
+def swd_debug_class_decorater(cls):
+    if SWD_DEBUG_EN:
+        def __deco_init__(self, *args, **kwargs):
+            logging.debug("In decorater __init__")
+
+        def __deco_del__(self, *args, **kwargs):
+            logging.debug("In decorater __del__")
+
+        cls.__init__ = __deco_init__
+        cls.__del__ = __deco_del__
+    else:
+        pass
+
+    return cls
+
+
+@swd_debug_class_decorater
 class SWDJlink(pylink.JLink):
     def __init__(self):
         self.__jlink_dll = pylink.library.Library("JLink_x64.dll")
@@ -23,6 +64,7 @@ class SWDJlink(pylink.JLink):
     def __del__(self):
         self.close()
 
+    @swd_debug_decorater
     def read32(self, addr):
         self.clear_error()
         try:
@@ -30,6 +72,7 @@ class SWDJlink(pylink.JLink):
         except errors.JLinkReadException:
             return -1
 
+    @swd_debug_decorater
     def write32(self, addr, data):
         self.clear_error()
         try:
@@ -37,6 +80,7 @@ class SWDJlink(pylink.JLink):
         except errors.JLinkWriteException:
             return False
 
+    @swd_debug_decorater
     def read_mem(self, addr, rlen):
         self.clear_error()
         try:
@@ -44,6 +88,7 @@ class SWDJlink(pylink.JLink):
         except errors.JLinkReadException:
             return False
 
+    @swd_debug_decorater
     def write_mem(self, addr, wdata):
         self.clear_error()
         try:
@@ -51,6 +96,7 @@ class SWDJlink(pylink.JLink):
         except errors.JLinkWriteException:
             return False
 
+    @swd_debug_decorater
     def is_connected(self):
         return self.connected()
 
