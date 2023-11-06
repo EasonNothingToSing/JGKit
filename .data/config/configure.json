@@ -1,0 +1,23 @@
+[
+    [
+        "Venus", "venus-configure.json"
+    ],
+    [
+        "Vega", "vega-configure.json"
+    ],
+    [
+        "VegaP", "vegap-configure.json"
+    ],
+    [
+        "Arcs", "arcs-configure.json"
+    ],
+    [
+        "Arcs-B0", "arcs-b0-configure.json"
+    ],
+    [
+        "Arcs-B0-CP", "arcs-b0-configure.json"
+    ],
+    [
+        "Arcs-C0", "arcs-c0-configure.json"
+    ]
+]

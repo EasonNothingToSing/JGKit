@@ -10,10 +10,9 @@ import pygame
 import pygame_menu
 
 
-__CHIP_MENU__ = [("Venus", "venus-configure.json"), ("Vega", "vega-configure.json"), ("VegaP", "vegap-configure.json"),
-                 ("Arcs", "arcs-configure.json"), ("Arcs-B0", "arcs-b0-configure.json"),
-                 ("Arcs-C0", "arcs-c0-configure.json")]
-xls_config_name = __CHIP_MENU__[0][1]
+__CHIP_CONFIG_FILE__ = "configure.json"
+__CHIP_MENU__ = []
+xls_config_name = ""
 
 
 if __name__ == "__main__":
@@ -54,6 +53,10 @@ if __name__ == "__main__":
     menu = pygame_menu.Menu('Welcome', 600, 400,
                             theme=pygame_menu.themes.THEME_BLUE)
 
+    with open(os.path.join("./.data/config", __CHIP_CONFIG_FILE__)) as f:
+        __CHIP_MENU__ = json.load(f, )
+
+    xls_config_name = __CHIP_MENU__[0][1]
     menu.add.selector('Chip :', __CHIP_MENU__, onchange=set_chip_config)
     menu.add.button('Set', start_the_game)
     menu.add.button('Quit', pygame_menu.events.EXIT)
