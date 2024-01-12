@@ -5,9 +5,12 @@ import logging
 import global_var
 import json
 import os
+import time
 
 import pygame
 import pygame_menu
+
+from threading import Thread
 
 
 __CHIP_CONFIG_FILE__ = "configure.json"
@@ -31,24 +34,29 @@ if __name__ == "__main__":
 
     def start_the_game():
         global menu
-        menu.disable()
-        with open(os.path.join("./.data/config", xls_config_name)) as f:
-            global_var.init()
-            dct = json.load(f, )
-            for key in dct.keys():
-                global_var.set_value(str(key), dct[key])
-        logging.debug(global_var.get_value("name"))
-        logging.debug(global_var.get_value("core"))
-        logging.debug(global_var.get_value("tif"))
-        logging.debug(global_var.get_value("excel"))
-        logging.debug(global_var.get_value("sheets"))
+        def run_window():
+            with open(os.path.join("./.data/config", xls_config_name)) as f:
+                global_var.init()
+                dct = json.load(f, )
+                for key in dct.keys():
+                    global_var.set_value(str(key), dct[key])
+            logging.debug(global_var.get_value("name"))
+            logging.debug(global_var.get_value("core"))
+            logging.debug(global_var.get_value("tif"))
+            logging.debug(global_var.get_value("excel"))
+            logging.debug(global_var.get_value("sheets"))
 
-        tk = tkinter.Tk()
-        tk.title(View.UI_TITLE + "-" + global_var.get_value("name"))
-        tk.geometry(View.UI_TOTAL_WIDTH + "x" + View.UI_TOTAL_HEIGHT)
-        tk.iconphoto(True, tkinter.PhotoImage(file="./.image/icon/exchange.png"))
-        Control.Control(tk)
-        tk.mainloop()
+            tk = tkinter.Tk()
+            tk.title(View.UI_TITLE + "-" + global_var.get_value("name"))
+            tk.geometry(View.UI_TOTAL_WIDTH + "x" + View.UI_TOTAL_HEIGHT)
+            tk.iconphoto(True, tkinter.PhotoImage(file="./.image/icon/exchange.png"))
+            Control.Control(tk)
+            tk.mainloop()
+
+        Thread(target=run_window).start()
+        time.sleep(5)
+        menu.close()
+        pygame.quit()
 
     menu = pygame_menu.Menu('Welcome', 600, 400,
                             theme=pygame_menu.themes.THEME_BLUE)
