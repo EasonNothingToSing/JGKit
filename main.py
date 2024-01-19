@@ -19,8 +19,8 @@ xls_config_name = ""
 
 
 if __name__ == "__main__":
-    LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s - %(funcName)s - %(filename)s"
-    logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
+    LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s - %(funcName)s - %(filename)s[line:%(lineno)d]"
+    logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 
     pygame.init()
     surface = pygame.display.set_mode((600, 400))

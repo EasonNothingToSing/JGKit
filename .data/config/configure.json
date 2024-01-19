@@ -19,5 +19,8 @@
     ],
     [
         "Arcs-C0", "arcs-c0-configure.json"
+    ],
+    [
+        "Mars", "mars-configure.json"
     ]
 ]

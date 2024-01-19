@@ -58,7 +58,7 @@ class SWDJlink(pylink.JLink):
             self.set_tif(pylink.enums.JLinkInterfaces.JTAG)
         else:
             self.set_tif(pylink.enums.JLinkInterfaces.SWD)
-        self.connect(self.core)
+        self.connect(self.core, verbose=True)
         if self.connected():
             logging.debug("Connect to the target")
         else:
@@ -105,4 +105,15 @@ class SWDJlink(pylink.JLink):
 
 
 if __name__ == "__main__":
-    swd = SWDJlink()
+    __jlink_dll = pylink.library.Library("JLink_x64.dll")
+
+    jtag = pylink.JLink(lib=__jlink_dll)
+    jtag.open()
+    jtag.set_tif(pylink.enums.JLinkInterfaces.JTAG)
+    jtag.connect(chip_name="N308", verbose=True)
+    print(jtag.core_id())
+
+    print(jtag.device_family())
+
+    print(jtag.connected()) # Ture
+    print(jtag.target_connected()) # False
