@@ -1,26 +1,34 @@
-[
-    [
-        "Venus", "venus-configure.json"
-    ],
-    [
-        "Vega", "vega-configure.json"
-    ],
-    [
-        "VegaP", "vegap-configure.json"
-    ],
-    [
-        "Arcs", "arcs-configure.json"
-    ],
-    [
-        "Arcs-B0", "arcs-b0-configure.json"
-    ],
-    [
-        "Arcs-B0-CP", "arcs-b0-configure.json"
-    ],
-    [
-        "Arcs-C0", "arcs-c0-configure.json"
-    ],
-    [
-        "Mars", "mars-configure.json"
-    ]
-]
+{
+    "Venus": {
+        "ConfigFile": "venus-configure.json",
+        "TIF": ["SWD"]
+    },
+    "Vega": {
+        "ConfigFile": "vega-configure.json",
+        "TIF": ["SWD"]
+    },
+    "VegaP": {
+        "ConfigFile": "vegap-configure.json",
+        "TIF": ["SWD"]
+    },
+    "Arcs-A0": {
+        "ConfigFile": "arcs-configure.json",
+        "TIF": ["SWD"]
+    },
+    "Arcs-B0": {
+        "ConfigFile": "arcs-b0-configure.json",
+        "TIF": ["FTDI"]
+    },
+    "Arcs-B0-CP": {
+        "ConfigFile": "arcs-b0-cp-configure.json",
+        "TIF": ["SWD"]
+    },
+    "Arcs-C0": {
+        "ConfigFile": "arcs-c0-configure.json",
+        "TIF": ["JTAG"]
+    },
+    "Mars": {
+        "ConfigFile": "mars-configure.json",
+        "TIF": ["JTAG", "FTDI-SWD", "FTDI-JTAG"]
+    }
+}

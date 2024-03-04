@@ -1,5 +1,5 @@
 {
-  "name": "Arcs-B0",
+  "name": "Arcs-B0-CP",
   "core": "CORTEX-M33",
   "excel": "ARCS-B_SoC_Memory_Mapping.xls",
   "sheets": [

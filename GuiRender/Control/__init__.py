@@ -561,7 +561,7 @@ class Control:
     def play(self):
         # Connect to target
         try:
-            self.swd_handler = SWDJlink.SWDJlink()
+            self.swd_handler = SWDJlink.Link()
         except:
             self.swd_handler = None
             return False

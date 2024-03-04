@@ -1,7 +1,6 @@
 {
   "name": "Venus",
   "core": "CORTEX-M33",
-  "tif": "SWD",
   "excel": "Venus_SoC_Memory_Mapping.xls",
   "sheets": [
     "AP Peripheral AddrMapping", "CP Peripheral AddrMapping"

@@ -1,7 +1,6 @@
 {
   "name": "Mars",
   "core": "N308",
-  "tif": "JTAG",
   "excel": "Mars_SoC_Memory_Mapping.xlsx",
   "sheets": [
     "PeriAddrMapping"
