@@ -1,4 +1,6 @@
-import xlrd
+import pandas
+
+from GuiRender.Model import ExcelReader
 import logging
 
 __all__ = ["E2D", ]
@@ -21,9 +23,8 @@ class E2D:
         self._pointer_stack = []
         # excel not None
         if excel:
-            self._format = xlrd.inspect_format(excel)
             self.excel_path = excel
-            self._xlrd_handler = xlrd.open_workbook(self.excel_path)
+            self._xlrd_handler = ExcelReader.ExcelReader(self.excel_path)
         else:
             logging.error("Excel handler is None")
             raise ValueError("Excel handler不能为None")
@@ -84,7 +85,7 @@ class E2D:
         for dct in self.header:
             for j, p in zip(dct["Level"], dct["Priority"]):
                 # corresponding cell have value
-                if row[dct["Num"]].value != "":
+                if (row[dct["Num"]] != "") and not (pandas.isna(row[dct["Num"]])):
                     rslt_list[int(j) - 1].append(p)
                 else:
                     rslt_list[int(j) - 1].append(None)
@@ -143,7 +144,7 @@ class E2D:
 
     def _state_machine(self, rows):
         # Ignore first row
-        next(rows)
+        rows = rows[1:]
         # Traverse all row in current sheet
         for row in rows:
             # For each row, should verify it's level
@@ -177,7 +178,7 @@ class E2D:
                     # check each item Level
                     if level in dct["Level"]:
                         # add an item to corresponding dictionary
-                        self._pointer_stack[level].update({redct: row[dct["Num"]].value})
+                        self._pointer_stack[level].update({redct: row[dct["Num"]]})
 
                 self._pointer_stack[level].update({"Level": []})
 
@@ -194,10 +195,10 @@ class E2D:
         return True
 
     def _locate_key(self, sheet):
-        if sheet.nrows > 0:
+        if len(sheet) > 0:
             for f_num, dct in enumerate(self.header):
-                for num, cell in enumerate(sheet.row(0)):
-                    if dct["Key"] == cell.value:
+                for num, cell in enumerate(sheet[0]):
+                    if dct["Key"] == cell:
                         if "Num" in self.header[f_num].keys():
                             self.header[f_num]["Num"] = num
                         else:
@@ -212,9 +213,9 @@ class E2D:
     def _xl2strc(self):
         for sheet in self.sheets:
             # sheet handler
-            handler = self._xlrd_handler.sheet_by_name(sheet)
+            data = self._xlrd_handler.sheet_by_name(sheet)
             # locate all key
-            if not self._locate_key(handler):
+            if not self._locate_key(data):
                 continue
 
             # Configure all pointer stack to None
@@ -224,7 +225,7 @@ class E2D:
             # add the dict into stack level0
             self._pointer_stack[0] = {"Sheet_Name": sheet, "Level": []}
             # state machine
-            if not self._state_machine(handler.get_rows()):
+            if not self._state_machine(data):
                 return False
 
         return True
@@ -244,7 +245,7 @@ if __name__ == "__main__":
 
     reheader = ("Address", "Start", "End", "Property", "Name", "Description")
 
-    e2d = E2D(excel="../../Venus_SoC_Memory_Mapping.xls", header=header, reheader=reheader)
+    e2d = E2D(excel="../../.data/xls/Venus_SoC_Memory_Mapping.xls", header=header, reheader=reheader)
     e2d.convert()
     for i in e2d:
         print(i)

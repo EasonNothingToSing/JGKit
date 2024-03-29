@@ -8,7 +8,7 @@ from GuiRender import View
 from GuiRender.Model import Excel2Dict
 from GuiRender.Model import SWDJlink
 from GuiRender.Model import WidgetLogger
-from GuiRender.Model import Xlsx2Xls
+from GuiRender.Model import ExcelReader
 from bitstring import BitArray
 from functools import wraps
 import json
@@ -28,15 +28,7 @@ class Control:
         self._excel = os.path.join("./.data/xls", global_var.get_value("excel"))
         self._module_sheets = global_var.get_value("sheets")
 
-        basename, ext = os.path.splitext(global_var.get_value("excel"))
-        # Check xls file or xlsx file is exists
-        if os.path.exists(os.path.join("./.data/xls", basename + ".xls")):
-            shutil.copy(os.path.join("./.data/xls", basename + ".xls"),
-                        os.path.join("./.data/xls/.temp", basename + ".xls"))
-        elif os.path.exists(os.path.join("./.data/xls", basename + ".xlsx")):
-            Xlsx2Xls.xlsxfileconvert(os.path.join("./.data/xls", basename + ".xlsx"))
-
-        self._excel = os.path.join("./.data/xls/.temp", basename + ".xls")
+        self._excel = os.path.join("./.data/xls/", global_var.get_value("excel"))
 
         # Style *************************************************************************************
         style = ttk.Style(self._master)
