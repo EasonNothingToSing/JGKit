@@ -1,6 +1,7 @@
 {
   "name": "Vega",
   "core": "CORTEX-M0+",
+  "tif": ["SWD"],
   "excel": "Vega_SoC_Memory_Mapping.xls",
   "sheets": [
     "Peripherals"

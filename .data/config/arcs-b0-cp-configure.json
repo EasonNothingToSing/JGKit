@@ -1,6 +1,7 @@
 {
   "name": "Arcs-B0-CP",
   "core": "CORTEX-M33",
+  "tif": ["SWD"],
   "excel": "ARCS-B_SoC_Memory_Mapping.xls",
   "sheets": [
     "cmn_cp_aon_peri"

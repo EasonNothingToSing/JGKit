@@ -1,6 +1,7 @@
 {
   "name": "VegaP",
   "core": "CORTEX-M0+",
+  "tif": ["SWD"],
   "excel": "VegaP_SoC_Memory_Mapping.xls",
   "sheets": [
     "Peripherals"
