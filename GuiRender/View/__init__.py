@@ -154,9 +154,9 @@ class ToolChainButtonFrame(BaseFrame):
 class StageLabel(tkinter.Label):
     def __init__(self, master, **kwargs):
         self.disconnect_image = ImageTk.PhotoImage(
-            Image.open("./.image/.disconnect/disconnect.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.disconnect/disconnect.png").resize((16, 16), Image.LANCZOS))
         self.connect_image = ImageTk.PhotoImage(
-            Image.open("./.image/.connect/connect.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.connect/connect.png").resize((16, 16), Image.LANCZOS))
         super(StageLabel, self).__init__(master, bg=DARCULA_DEFAULT_BG, image=self.disconnect_image, **kwargs)
 
     def enable(self):
@@ -168,34 +168,50 @@ class StageLabel(tkinter.Label):
 
 class FlatButton(tkinter.Button):
     def __init__(self, master, **kwargs):
+        # Get tip text and pop corresponding key from kwargs
+        if "tip_text" in kwargs.keys():
+            self.tip_text = kwargs["tip_text"]
+            kwargs.pop("tip_text")
+        else:
+            self.tip_text = None
+
         super(FlatButton, self).__init__(master, relief=tkinter.FLAT, bg=DARCULA_DEFAULT_BG,
-                                         activebackground=DARCULA_BUTTON_HOVER, highlightcolor=DARCULA_BUTTON_HOVER,
-                                         **kwargs)
-        self.bind("<Enter>", self._on_enter)
-        self.bind("<Leave>", self._on_level)
+                                         activebackground=DARCULA_BUTTON_HOVER, highlightcolor=DARCULA_BUTTON_HOVER, **kwargs)
+        self.bind("<Enter>", self.on_enter)
+        self.bind("<Leave>", self.on_level)
+        self.tip_window = None
 
     def bindable(self):
         self.configure(bg=DARCULA_DEFAULT_BG)
-        self.bind("<Enter>", self._on_enter)
-        self.bind("<Leave>", self._on_level)
+        self.bind("<Enter>", self.on_enter)
+        self.bind("<Leave>", self.on_level)
 
     def unbindable(self):
         self.configure(bg=DARCULA_DEFAULT_BG)
         self.unbind("<Enter>")
         self.unbind("<Leave>")
+        if self.tip_window:
+            self.tip_window.destroy()
+        self.tip_window = None
 
-    def _on_enter(self, event):
+    def on_enter(self, event):
         self.configure(bg=DARCULA_BUTTON_HOVER)
+        if self.tip_text:
+            self.tip_window = TopTipBase(self)
+            TopTipLabelBase(self.tip_window, text=self.tip_text).pack(ipadx=1)
 
-    def _on_level(self, event):
+    def on_level(self, event):
         self.configure(bg=DARCULA_DEFAULT_BG)
+        if self.tip_window:
+            self.tip_window.destroy()
+        self.tip_window = None
 
 
 class PlayButton(FlatButton):
     def __init__(self, master, **kwargs):
-        self.play_image = ImageTk.PhotoImage(Image.open("./.image/.connect/play.png").resize((16, 16), Image.ANTIALIAS))
+        self.play_image = ImageTk.PhotoImage(Image.open("./.image/.connect/play.png").resize((16, 16), Image.LANCZOS))
         self.play_dark_image = ImageTk.PhotoImage(
-            Image.open("./.image/.connect/play-dark.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.connect/play-dark.png").resize((16, 16), Image.LANCZOS))
         super(PlayButton, self).__init__(master, image=self.play_image, **kwargs)
         self.bindable()
 
@@ -211,9 +227,9 @@ class PlayButton(FlatButton):
 class StopButton(FlatButton):
     def __init__(self, master, **kwargs):
         self.stop_image = ImageTk.PhotoImage(
-            Image.open("./.image/.disconnect/stop.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.disconnect/stop.png").resize((16, 16), Image.LANCZOS))
         self.stop_dark_image = ImageTk.PhotoImage(
-            Image.open("./.image/.disconnect/stop-dark.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.disconnect/stop-dark.png").resize((16, 16), Image.LANCZOS))
         super(StopButton, self).__init__(master, image=self.stop_dark_image, state=tkinter.DISABLED, **kwargs)
         self.unbindable()
 
@@ -229,9 +245,9 @@ class StopButton(FlatButton):
 class RefreshButton(FlatButton):
     def __init__(self, master, **kwargs):
         self.refresh_image = ImageTk.PhotoImage(
-            Image.open("./.image/.refresh/refresh.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.refresh/refresh.png").resize((16, 16), Image.LANCZOS))
         self.refresh_dark_image = ImageTk.PhotoImage(
-            Image.open("./.image/.refresh/refresh-dark.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.refresh/refresh-dark.png").resize((16, 16), Image.LANCZOS))
         super(RefreshButton, self).__init__(master, image=self.refresh_dark_image, state=tkinter.DISABLED, **kwargs)
         self.unbindable()
 
@@ -247,9 +263,9 @@ class RefreshButton(FlatButton):
 class UploadButton(FlatButton):
     def __init__(self, master, **kwargs):
         self.upload_image = ImageTk.PhotoImage(
-            Image.open("./.image/.refresh/upload.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.refresh/upload.png").resize((16, 16), Image.LANCZOS))
         self.upload_dark_image = ImageTk.PhotoImage(
-            Image.open("./.image/.refresh/upload-dark.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.refresh/upload-dark.png").resize((16, 16), Image.LANCZOS))
         super(UploadButton, self).__init__(master, image=self.upload_dark_image, state=tkinter.DISABLED, **kwargs)
         self.unbindable()
 
@@ -265,9 +281,9 @@ class UploadButton(FlatButton):
 class OpenFileButton(FlatButton):
     def __init__(self, master, **kwargs):
         self.open_image = ImageTk.PhotoImage(
-            Image.open("./.image/.file/open.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.file/open.png").resize((16, 16), Image.LANCZOS))
         self.open_dark_image = ImageTk.PhotoImage(
-            Image.open("./.image/.file/open_dark.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.file/open_dark.png").resize((16, 16), Image.LANCZOS))
         super(OpenFileButton, self).__init__(master, image=self.open_dark_image, state=tkinter.DISABLED, **kwargs)
         self.unbindable()
 
@@ -283,9 +299,9 @@ class OpenFileButton(FlatButton):
 class SaveFileButton(FlatButton):
     def __init__(self, master, **kwargs):
         self.save_image = ImageTk.PhotoImage(
-            Image.open("./.image/.file/save.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.file/save.png").resize((16, 16), Image.LANCZOS))
         self.save_dark_image = ImageTk.PhotoImage(
-            Image.open("./.image/.file/save_dark.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.file/save_dark.png").resize((16, 16), Image.LANCZOS))
         super(SaveFileButton, self).__init__(master, image=self.save_dark_image, state=tkinter.DISABLED, **kwargs)
         self.unbindable()
 
@@ -301,9 +317,9 @@ class SaveFileButton(FlatButton):
 class GlimpseFileButton(FlatButton):
     def __init__(self, master, **kwargs):
         self.glimpse_image = ImageTk.PhotoImage(
-            Image.open("./.image/.file/glimpse.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.file/glimpse.png").resize((16, 16), Image.LANCZOS))
         self.glimpse_dark_image = ImageTk.PhotoImage(
-            Image.open("./.image/.file/glimpse_dark.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.file/glimpse_dark.png").resize((16, 16), Image.LANCZOS))
         super(GlimpseFileButton, self).__init__(master, image=self.glimpse_dark_image, state=tkinter.DISABLED, **kwargs)
         self.unbindable()
 
@@ -318,26 +334,42 @@ class GlimpseFileButton(FlatButton):
 
 class DarculaCheckButton(tkinter.Checkbutton):
     def __init__(self, master, **kwargs):
+        # Get tip text and pop corresponding key from kwargs
+        if "tip_text" in kwargs.keys():
+            self.tip_text = kwargs["tip_text"]
+            kwargs.pop("tip_text")
+        else:
+            self.tip_text = None
         super(DarculaCheckButton, self).__init__(master, bg=DARCULA_DEFAULT_BG, fg=DARCULA_DEFAULT_FG,
                                                  selectcolor=DARCULA_DEFAULT_SELECT_BD,
                                                  activebackground=DARCULA_DEFAULT_BG,
                                                  **kwargs)
-        self.bind("<Enter>", self._on_enter)
-        self.bind("<Leave>", self._on_level)
+        self.bind("<Enter>", self.on_enter)
+        self.bind("<Leave>", self.on_level)
+        self.tip_window = None
 
     def bindable(self):
-        self.bind("<Enter>", self._on_enter)
-        self.bind("<Leave>", self._on_level)
+        self.bind("<Enter>", self.on_enter)
+        self.bind("<Leave>", self.on_level)
 
     def unbindable(self):
         self.unbind("<Enter>")
         self.unbind("<Leave>")
+        if self.tip_window:
+            self.tip_window.destroy()
+        self.tip_window = None
 
-    def _on_enter(self, event):
+    def on_enter(self, event):
         self.configure(activebackground=DARCULA_BUTTON_HOVER, bg=DARCULA_BUTTON_HOVER)
+        if self.tip_text:
+            self.tip_window = TopTipBase(self)
+            TopTipLabelBase(self.tip_window, text=self.tip_text).pack(ipadx=1)
 
-    def _on_level(self, event):
+    def on_level(self, event):
         self.configure(activebackground=DARCULA_DEFAULT_BG, bg=DARCULA_DEFAULT_BG)
+        if self.tip_window:
+            self.tip_window.destroy()
+        self.tip_window = None
 
 
 class AutoCheck(DarculaCheckButton):
@@ -529,9 +561,9 @@ class MemUnit(tkinter.Entry):
 class LoadFileButton(FlatButton):
     def __init__(self, master, **kwargs):
         self.load_image = ImageTk.PhotoImage(
-            Image.open("./.image/.memory/load.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.memory/load.png").resize((16, 16), Image.LANCZOS))
         self.load_dark_image = ImageTk.PhotoImage(
-            Image.open("./.image/.memory/load_dark.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.memory/load_dark.png").resize((16, 16), Image.LANCZOS))
         super(LoadFileButton, self).__init__(master, image=self.load_dark_image, state=tkinter.DISABLED, **kwargs)
         self.unbindable()
 
@@ -547,9 +579,9 @@ class LoadFileButton(FlatButton):
 class StoreFileButton(FlatButton):
     def __init__(self, master, **kwargs):
         self.store_image = ImageTk.PhotoImage(
-            Image.open("./.image/.memory/store.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.memory/store.png").resize((16, 16), Image.LANCZOS))
         self.store_dark_image = ImageTk.PhotoImage(
-            Image.open("./.image/.memory/store_dark.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.memory/store_dark.png").resize((16, 16), Image.LANCZOS))
         super(StoreFileButton, self).__init__(master, image=self.store_dark_image, state=tkinter.DISABLED, **kwargs)
         self.unbindable()
 
@@ -565,9 +597,9 @@ class StoreFileButton(FlatButton):
 class AddFileButton(FlatButton):
     def __init__(self, master, **kwargs):
         self.add_image = ImageTk.PhotoImage(
-            Image.open("./.image/.memory/add.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.memory/add.png").resize((16, 16), Image.LANCZOS))
         self.add_dark_image = ImageTk.PhotoImage(
-            Image.open("./.image/.memory/add_dark.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.memory/add_dark.png").resize((16, 16), Image.LANCZOS))
         super(AddFileButton, self).__init__(master, image=self.add_dark_image, state=tkinter.DISABLED, **kwargs)
         self.unbindable()
 
@@ -583,9 +615,9 @@ class AddFileButton(FlatButton):
 class SubFileButton(FlatButton):
     def __init__(self, master, **kwargs):
         self.sub_image = ImageTk.PhotoImage(
-            Image.open("./.image/.memory/sub.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.memory/sub.png").resize((16, 16), Image.LANCZOS))
         self.sub_dark_image = ImageTk.PhotoImage(
-            Image.open("./.image/.memory/sub_dark.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.memory/sub_dark.png").resize((16, 16), Image.LANCZOS))
         super(SubFileButton, self).__init__(master, image=self.sub_dark_image, state=tkinter.DISABLED, **kwargs)
         self.unbindable()
 
@@ -601,9 +633,9 @@ class SubFileButton(FlatButton):
 class RefreshFileButton(FlatButton):
     def __init__(self, master, **kwargs):
         self.refresh_image = ImageTk.PhotoImage(
-            Image.open("./.image/.refresh/refresh.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.refresh/refresh.png").resize((16, 16), Image.LANCZOS))
         self.refresh_dark_image = ImageTk.PhotoImage(
-            Image.open("./.image/.refresh/refresh-dark.png").resize((16, 16), Image.ANTIALIAS))
+            Image.open("./.image/.refresh/refresh-dark.png").resize((16, 16), Image.LANCZOS))
         super(RefreshFileButton, self).__init__(master, image=self.refresh_dark_image, state=tkinter.DISABLED, **kwargs)
         self.unbindable()
 
@@ -625,6 +657,24 @@ class TopLevelBase(tkinter.Toplevel):
         y = (master.winfo_screenheight() // 2)
 
         self.geometry(f"+{x}+{y}")
+
+
+class TopTipLabelBase(tkinter.Label):
+    def __init__(self, master, **kwargs):
+        super(TopTipLabelBase, self).__init__(master, justify=tkinter.LEFT, background="#ffffe0",
+                                              relief=tkinter.SOLID, borderwidth=1, font=UI_FONT, **kwargs)
+
+
+class TopTipBase(tkinter.Toplevel):
+    DEFAULT_TOPTIP_MARGING_WIDTH = 20
+    DEFAULT_TOPTIP_MARGING_HEIGHT = 20
+
+    def __init__(self, master, **kwargs):
+        super(TopTipBase, self).__init__(master=master, **kwargs)
+        self.wm_overrideredirect(True)
+        self.wm_geometry("+%d+%d" % ((self.master.winfo_rootx() + TopTipBase.DEFAULT_TOPTIP_MARGING_WIDTH),
+                                     (self.master.winfo_rooty() + self.master.winfo_height() +
+                                      TopTipBase.DEFAULT_TOPTIP_MARGING_HEIGHT)))
 
 
 if __name__ == "__main__":

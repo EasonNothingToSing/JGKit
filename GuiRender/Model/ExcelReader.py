@@ -5,21 +5,20 @@ import os
 class ExcelReader:
     def __init__(self, root):
         self.__root = root
+        self.excel_handler = None
 
         _, file_extension = os.path.splitext(self.__root)
-        if file_extension in ['.xlsx']:
-            pass
-        elif file_extension in ['.xls']:
-            pass
+        if (file_extension in ['.xlsx']) or (file_extension in ['.xls']):
+            self.excel_handler = pandas.read_excel(self.__root, sheet_name=None, header=None)
         else:
             # TODO raise error
             pass
 
     def sheet_names(self):
-        return [key for key in pandas.read_excel(io=self.__root, sheet_name=None).keys()]
+        return [key for key in self.excel_handler.keys()]
 
     def sheet_by_name(self, name):
-        return pandas.read_excel(self.__root, sheet_name=name, header=None).values
+        return self.excel_handler[name].values
 
 
 if __name__ == "__main__":

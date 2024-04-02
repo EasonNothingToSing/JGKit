@@ -102,30 +102,36 @@ class Control:
 
         self.auto_check_value = tkinter.StringVar()
         self.auto_check = View.AutoCheck(self.control_button_frame, variable=self.auto_check_value,
-                                         command=self.auto_refresh)
+                                         command=self.auto_refresh,
+                                         tip_text="Automatic refresh button,"
+                                                  " forcibly updating the read value at regular intervals")
         self.auto_check.pack(side=tkinter.RIGHT, anchor="e", padx="4")
-        self.refresh_button = View.RefreshButton(self.control_button_frame, command=self.refresh)
+        self.refresh_button = View.RefreshButton(self.control_button_frame, command=self.refresh,
+                                                 tip_text="Refresh, force refresh read value")
         self.refresh_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
-        self.upload_button = View.UploadButton(self.control_button_frame, command=self.upload)
+        self.upload_button = View.UploadButton(self.control_button_frame, command=self.upload,
+                                               tip_text="Upload, reload write value")
         self.upload_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
         View.GraySeparator(self.control_button_frame).pack(side=tkinter.RIGHT, anchor="e", pady="4", fill="y", padx="4")
 
-        self.stop_button = View.StopButton(self.control_button_frame)
+        self.stop_button = View.StopButton(self.control_button_frame, tip_text="Stop")
         self.stop_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
         self.stop_button.configure(command=self.stop)
-        self.play_button = View.PlayButton(self.control_button_frame)
+        self.play_button = View.PlayButton(self.control_button_frame, tip_text="Play")
         self.play_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
         self.play_button.configure(command=self.play)
 
-        self.open_file_button = View.OpenFileButton(self.control_button_frame)
+        self.open_file_button = View.OpenFileButton(self.control_button_frame, tip_text="Open 'regcfg' file")
         self.open_file_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
         self.open_file_button.configure(command=self.open_file)
 
-        self.save_file_button = View.SaveFileButton(self.control_button_frame)
+        self.save_file_button = View.SaveFileButton(self.control_button_frame, tip_text="Save 'regcfg' file")
         self.save_file_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
         self.save_file_button.configure(command=self.save_file)
 
-        self.glimpse_file_button = View.GlimpseFileButton(self.control_button_frame)
+        self.glimpse_file_button = View.GlimpseFileButton(self.control_button_frame,
+                                                          tip_text="Glimpse current register,"
+                                                                   " save current read value to 'glicfg' file")
         self.glimpse_file_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
         self.glimpse_file_button.configure(command=self.glimpse_file)
 
@@ -242,9 +248,9 @@ class Control:
 
         # Image
         self._image_tag = (
-            ImageTk.PhotoImage(Image.open("./.image/.treeview/device.png").resize((16, 16), Image.ANTIALIAS)),
-            ImageTk.PhotoImage(Image.open("./.image/.treeview/register.png").resize((16, 16), Image.ANTIALIAS)),
-            ImageTk.PhotoImage(Image.open("./.image/.treeview/field.png").resize((16, 16), Image.ANTIALIAS))
+            ImageTk.PhotoImage(Image.open("./.image/.treeview/device.png").resize((16, 16), Image.LANCZOS)),
+            ImageTk.PhotoImage(Image.open("./.image/.treeview/register.png").resize((16, 16), Image.LANCZOS)),
+            ImageTk.PhotoImage(Image.open("./.image/.treeview/field.png").resize((16, 16), Image.LANCZOS))
         )
 
         # SWD handler

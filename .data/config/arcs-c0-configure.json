@@ -2,7 +2,7 @@
   "name": "Arcs-C0",
   "core": "RV32",
   "tif": ["JTAG"],
-  "excel": "ARCS-C_SoC_Memory_Mapping.xls",
+  "excel": "ARCS-C_SoC_Memory_Mapping.xlsx",
   "sheets": [
     "cmn_cp_aon_peri",
     "AP Peripheral AddrMapping"
