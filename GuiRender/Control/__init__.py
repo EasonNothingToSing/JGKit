@@ -16,6 +16,10 @@ import os
 import global_var
 import shutil
 import time
+import warnings
+
+
+warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 
 
 class Control:
@@ -497,7 +501,7 @@ class Control:
     def mem_refresh(self):
         chunk = self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]
         logging.debug("<Mem><Refresh> Address -> %s - %s" % (hex(chunk["head_address"]), hex(chunk["tail_address"])))
-        length = chunk["tail_address"] - chunk["head_address"]
+        length = int((chunk["tail_address"] - chunk["head_address"])/4)
         mem_list = self.swd_handler.read_mem(chunk["head_address"], length)
 
         if len(mem_list) != len(chunk["value"]):
@@ -930,6 +934,7 @@ class Control:
         current_tab = self.memory.select()
         if current_tab:
             self.memory.forget(current_tab)
+            self.memory.after_cancel(self.memory_refresh_handler)
 
     def __mem_sheet_finish_edit_name(self, tab_id, entry):
         new_text = entry.get()
@@ -1001,17 +1006,15 @@ class Control:
 
                 tail_address = self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())][
                                    "head_address"] + address_offset
+                head_address = (self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] -
+                                (View.UI_MEM_ELEMENTS_ITEM_VERTICAL_MAX * View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX * 4
+                                 - address_offset))
 
-                self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] \
-                    -= (View.UI_MEM_ELEMENTS_ITEM_VERTICAL_MAX * View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX * 4 - address_offset)
+                if head_address < 0:
+                    return
 
+                self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] = head_address
                 self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["tail_address"] = tail_address
-
-                # if self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] < 0:
-                #     mem_diff = self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] - 0
-                #     self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"] = 0
-                #
-                #     self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["tail_address"] += mem_diff
 
                 logging.debug("[Event]<Mousewheel> To top address -> %s" %
                               (hex(self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]["head_address"])))
@@ -1051,9 +1054,20 @@ class Control:
         tail_address = chunk["tail_address"]
         length = tail_address - address
         logging.debug("Auto load next chunk from memory -> %s : %s" % (hex(address), hex(tail_address)))
+        try:
+            if chunk["entry"]:
+                for key, value in chunk["entry"].items():
+                    value.destroy()
+            if chunk["label"]:
+                for item in chunk["label"]:
+                    item.destroy()
+        except KeyError:
+            pass
         chunk["entry"] = {}
         chunk["value"] = []
-        self.memory_refresh_handler = self.memory.after(self.memory_refresh_time, self._mem_auto_refresh)
+        chunk["label"] = []
+        if self.memory_refresh_handler is None:
+            self.memory_refresh_handler = self.memory.after(self.memory_refresh_time, self._mem_auto_refresh)
 
         self.mem_header_frame = chunk["header_frame"]
         self.mem_canvas_frame = chunk["canvas_frame"]
@@ -1072,6 +1086,7 @@ class Control:
                 if j == 0:
                     label = View.MemLabel(self.mem_canvas_frame, text=hex(address + i * cols * 4))
                     label.grid(row=i, column=j, sticky="nsew")
+                    chunk["label"].append(label)
                 else:
                     def on_entry_change(name, index, mode):
                         entry = chunk["entry"][name]

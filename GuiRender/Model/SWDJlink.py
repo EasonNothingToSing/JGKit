@@ -9,7 +9,7 @@ import ctypes
 
 __all__ = ["Link", ]
 
-LINK_DEBUG_EN = True
+LINK_DEBUG_EN = False
 
 
 def link_debug_decorater(func):

@@ -20,9 +20,11 @@ err_buf = (ctypes.c_char * 336)()
 # err_buf = ctypes.string_at(err_buf).decode()
 # print("TIF:", err_buf)
 
-my_dll.JLINKARM_ExecCommand("Device = N308".encode(), err_buf, 336)
+my_dll.JLINKARM_ExecCommand("Device=N308".encode(), err_buf, 336)
 err_buf = ctypes.string_at(err_buf).decode()
 print("DEVICE:", err_buf)
+
+my_dll.JLINKARM_SetSpeed(4000)
 
 result = my_dll.JLINKARM_Connect()
 print("RESULT:", result)
