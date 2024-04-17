@@ -219,6 +219,7 @@ class Control:
         self.memory.pack(expand=True, fill=tkinter.BOTH)
         self.memory.bind("<Double-Button-1>", self._mem_sheet_double_click)
         self.memory.bind("<Delete>", self._mem_sheet_delete)
+        self.memory.bind("<<NotebookTabChanged>>", self._mem_tab_change)
 
         self.mem_canvas = None
         self.mem_canvas_frame = None
@@ -500,7 +501,7 @@ class Control:
     @control_button_stage_machine
     def mem_refresh(self):
         chunk = self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]
-        logging.debug("<Mem><Refresh> Address -> %s - %s" % (hex(chunk["head_address"]), hex(chunk["tail_address"])))
+        logging.info("<Mem><Refresh> Address -> %s - %s" % (hex(chunk["head_address"]), hex(chunk["tail_address"])))
         length = int((chunk["tail_address"] - chunk["head_address"])/4)
         mem_list = self.swd_handler.read_mem(chunk["head_address"], length)
 
@@ -520,6 +521,9 @@ class Control:
                 address = str(chunk["head_address"] + 4*i)
                 chunk["entry"][address].delete(0, tkinter.END)
                 chunk["entry"][address].insert(0, hex(mem_list[i]))
+
+            # Copy jlink read value to chunk['value']
+            chunk["value"] = mem_list.copy()
 
         return True
 
@@ -935,6 +939,18 @@ class Control:
         if current_tab:
             self.memory.forget(current_tab)
             self.memory.after_cancel(self.memory_refresh_handler)
+            self.memory_refresh_handler = None
+
+    def _mem_tab_change(self, event):
+        current_tab = self.memory.select()
+        if current_tab:
+            index = self.memory.index(current_tab)
+            tab_name = self.memory.tab(current_tab, "text")
+            logging.info(f"Tab changed to index {index}, which is labeled '{tab_name}'")
+            if self.memory_refresh_handler is None:
+                self.memory_refresh_handler = self.memory.after(self.memory_refresh_time, self._mem_auto_refresh)
+        else:
+            logging.info("No tab to delete!!!")
 
     def __mem_sheet_finish_edit_name(self, tab_id, entry):
         new_text = entry.get()
@@ -1057,6 +1073,7 @@ class Control:
         try:
             if chunk["entry"]:
                 for key, value in chunk["entry"].items():
+                    value.config(textvariable=None)
                     value.destroy()
             if chunk["label"]:
                 for item in chunk["label"]:
@@ -1092,14 +1109,15 @@ class Control:
                         entry = chunk["entry"][name]
                         entry.config(fg="red")
 
-                    entry_var = tkinter.StringVar()
+                    entry_var = tkinter.StringVar(name=str(address + (i * cols + j - 1) * 4))
                     entry = View.MemUnit(self.mem_canvas_frame, textvariable=entry_var)
-                    chunk["entry"][entry_var._name] = entry
+                    chunk["entry"][str(entry_var)] = entry
                     try:
                         value = hex(chunk["value"][i * cols + j - 1])
                     except TypeError:
                         value = "?"
 
+                    entry.delete(0, tkinter.END)
                     entry.insert(0, value)
                     entry_var.trace("w", on_entry_change)
                     entry.grid(row=i, column=j, sticky="nsew")
