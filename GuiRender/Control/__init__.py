@@ -193,23 +193,26 @@ class Control:
         self.mem_control_frame = View.MemControlFrame(self.mem_frame)
         self.mem_control_frame.pack(fill=tkinter.X, side=tkinter.TOP, padx=10, pady=10)
         # Button
-        self.mem_control_add_button = View.AddFileButton(self.mem_control_frame)
+        self.mem_control_add_button = View.AddFileButton(self.mem_control_frame, tip_text="Add memory viewer")
         self.mem_control_add_button.pack(side=tkinter.LEFT, anchor="e", padx="4")
         self.mem_control_add_button.configure(command=self.mem_add_button_callback)
 
-        self.mem_control_sub_button = View.SubFileButton(self.mem_control_frame)
+        self.mem_control_sub_button = View.SubFileButton(self.mem_control_frame, tip_text="Sub memory viewer")
         self.mem_control_sub_button.pack(side=tkinter.LEFT, anchor="e", padx="4")
         self.mem_control_sub_button.configure(command=self.mem_sub_button_callback)
 
-        self.mem_control_load_button = View.LoadFileButton(self.mem_control_frame)
+        self.mem_control_load_button = View.LoadFileButton(self.mem_control_frame, tip_text="Import a raw file to"
+                                                                                            " memroy")
         self.mem_control_load_button.pack(side=tkinter.LEFT, anchor="e", padx="4")
         self.mem_control_load_button.configure(command=self.mem_import_button_callback)
 
-        self.mem_control_store_button = View.StoreFileButton(self.mem_control_frame)
+        self.mem_control_store_button = View.StoreFileButton(self.mem_control_frame, tip_text="Export current tab"
+                                                                                              " memory to a raw file")
         self.mem_control_store_button.pack(side=tkinter.LEFT, anchor="e", padx="4")
         self.mem_control_store_button.configure(command=self.mem_export_button_callback)
 
-        self.mem_control_refresh_button = View.RefreshFileButton(self.mem_control_frame)
+        self.mem_control_refresh_button = View.RefreshFileButton(self.mem_control_frame, tip_text="Refresh current tab"
+                                                                                                  " memory immediately")
         self.mem_control_refresh_button.pack(side=tkinter.LEFT, anchor="e", padx="4")
         self.mem_control_refresh_button.configure(command=self.mem_refresh_button_callback)
 
