@@ -70,13 +70,25 @@ class Link:
     def write32(self, addr, data):
         self.link_handler.write32(addr, data)
 
-    @link_debug_decorater
-    def read_mem(self, addr, rlen):
-        return self.link_handler.read_mem(addr, rlen)
+    def read16(self, addr):
+        return self.link_handler.read16(addr)
+
+    def write16(self, addr, data):
+        self.link_handler.write16(addr, data)
+
+    def read8(self, addr):
+        return self.link_handler.read8(addr)
+
+    def write8(self, addr, data):
+        self.link_handler.write8(addr, data)
 
     @link_debug_decorater
-    def write_mem(self, addr, wdata):
-        return self.link_handler.write_mem(addr, wdata)
+    def read_mem(self, addr, rlen, nbits=32):
+        return self.link_handler.read_mem(addr, rlen, nbits)
+
+    @link_debug_decorater
+    def write_mem(self, addr, wdata, nbits=32):
+        return self.link_handler.write_mem(addr, wdata, nbits)
 
     @link_debug_decorater
     def is_connected(self):
@@ -156,17 +168,45 @@ class SWDJlink(pylink.JLink):
         except errors.JLinkWriteException:
             return False
 
-    def read_mem(self, addr, rlen):
+    def read16(self, addr):
         self.clear_error()
         try:
-            return self.memory_read32(addr, rlen)
+            return self.memory_read16(addr, num_halfwords=1)[0]
+        except errors.JLinkReadException:
+            return -1
+
+    def write16(self, addr, data):
+        self.clear_error()
+        try:
+            self.memory_write16(addr, [data])
+        except errors.JLinkWriteException:
+            return False
+
+    def read8(self, addr):
+        self.clear_error()
+        try:
+            return self.memory_read8(addr, num_bytes=1)[0]
+        except errors.JLinkReadException:
+            return -1
+
+    def write8(self, addr, data):
+        self.clear_error()
+        try:
+            self.memory_write8(addr, [data])
+        except errors.JLinkWriteException:
+            return False
+
+    def read_mem(self, addr, rlen, nbits=32):
+        self.clear_error()
+        try:
+            return self.memory_read(addr, rlen, nbits=nbits)
         except errors.JLinkReadException:
             return False
 
-    def write_mem(self, addr, wdata):
+    def write_mem(self, addr, wdata, nbits=32):
         self.clear_error()
         try:
-            return self.memory_write32(addr, wdata)
+            return self.memory_write(addr, wdata, nbits=nbits)
         except errors.JLinkWriteException:
             return False
 

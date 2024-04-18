@@ -1228,9 +1228,16 @@ class Control:
             except ValueError:
                 address = int(address, base=16)
 
-            file = import_file.replace("\n", "").split()
-            file = map(lambda x: int(x, base=16), file)
-            self.swd_handler.write_mem(address, list(file))
+            hex_file = import_file.replace("\n", "").split()
+            u8_list = []
+            for i in hex_file:
+                if len(i) == 4:
+                    u8_list.append(int(i[0:2], 16))
+                    u8_list.append(int(i[2:4], 16))
+                elif len(i) == 2:
+                    u8_list.append(int(i, 16))
+
+            self.swd_handler.write_mem(address, u8_list, nbits=8)
 
             top.destroy()  # 关闭窗口
 
@@ -1381,17 +1388,24 @@ class Control:
             except ValueError:
                 length = int(length, base=16)
 
-            out_list = self.swd_handler.read_mem(start_address, length)
+            out_list = self.swd_handler.read_mem(start_address, length, nbits=8)
 
             with open(export_file, mode="w", encoding="utf8") as f:
+                str_value = ""
                 for num, item in enumerate(out_list):
                     num += 1
-                    if num % 8 == 0:
-                        ret = " \r"
+                    str_value += hex(item).replace("0x", "").rjust(2, "0")
+                    if num % 16 == 0:
+                        f.write((str_value + " \r"))
+                        str_value = ""
+                    elif (num % 2) == 0:
+                        f.write((str_value + " "))
+                        str_value = ""
                     else:
-                        ret = " "
+                        pass
 
-                    f.write(hex(item).replace("0x", "").rjust(8, "0") + ret)
+                if str_value != "":
+                    f.write(str_value)
 
             top.destroy()
 
