@@ -1,7 +1,7 @@
 {
   "name": "VegaH",
   "core": "N208",
-  "tif": ["JTAG"],
+  "tif": ["JTAG", "CJTAG"],
   "excel": "VegaH_SoC_Memory_Mapping.xlsx",
   "sheets": [
     "Peripherals"

@@ -145,6 +145,9 @@ class SWDJlink(pylink.JLink):
             self.set_tif(pylink.enums.JLinkInterfaces.JTAG)
         elif global_var.get_value("tif") == "SWD":
             self.set_tif(pylink.enums.JLinkInterfaces.SWD)
+        elif global_var.get_value("tif") == "CJTAG":
+            self.set_tif(7)
+
         self.connect(self.core, verbose=True)
         if self.connected():
             logging.debug("Connect to the target")
