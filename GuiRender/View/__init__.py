@@ -677,6 +677,65 @@ class TopTipBase(tkinter.Toplevel):
                                       TopTipBase.DEFAULT_TOPTIP_MARGING_HEIGHT)))
 
 
+class RadioButtonBase(tkinter.Radiobutton):
+    DEFAULT_RADIOBUTTON_BG_COLOR = DARCULA_DEFAULT_BG
+    DEFAULT_RADIOBUTTON_FG_COLOR = DARCULA_DEFAULT_FG
+    DEFAULT_RADIOBUTTON_FONT = UI_FONT
+    DEFAULT_RADIOBUTTON_PADX = 2
+    DEFAULT_RADIOBUTTON_PADY = 2
+    DEFAULT_RADIOBUTTON_WIDTH = 5
+    DEFAULT_RADIOBUTTON_HEIGHT = 5
+
+    def __init__(self, master, **kwargs):
+        # Get tip text and pop corresponding key from kwargs
+        if "tip_text" in kwargs.keys():
+            self.tip_text = kwargs["tip_text"]
+            kwargs.pop("tip_text")
+        else:
+            self.tip_text = None
+
+        super(RadioButtonBase, self).__init__(master=master, bg=RadioButtonBase.DEFAULT_RADIOBUTTON_BG_COLOR,
+                                              fg=RadioButtonBase.DEFAULT_RADIOBUTTON_FG_COLOR, indicatoron=0,
+                                              font=RadioButtonBase.DEFAULT_RADIOBUTTON_FONT, **kwargs)
+
+        self.bind("<Enter>", self.on_enter)
+        self.bind("<Leave>", self.on_level)
+        self.tip_window = None
+
+    def bindable(self):
+        self.configure(bg=DARCULA_DEFAULT_BG)
+        self.bind("<Enter>", self.on_enter)
+        self.bind("<Leave>", self.on_level)
+
+    def unbindable(self):
+        self.configure(bg=DARCULA_DEFAULT_BG)
+        self.unbind("<Enter>")
+        self.unbind("<Leave>")
+        if self.tip_window:
+            self.tip_window.destroy()
+        self.tip_window = None
+
+    def enable(self):
+        self.configure(state=tkinter.NORMAL)
+        self.bindable()
+
+    def disable(self):
+        self.configure(state=tkinter.DISABLED)
+        self.unbindable()
+
+    def on_enter(self, event):
+        self.configure(bg=DARCULA_BUTTON_HOVER)
+        if self.tip_text:
+            self.tip_window = TopTipBase(self)
+            TopTipLabelBase(self.tip_window, text=self.tip_text).pack(ipadx=1)
+
+    def on_level(self, event):
+        self.configure(bg=DARCULA_DEFAULT_BG)
+        if self.tip_window:
+            self.tip_window.destroy()
+        self.tip_window = None
+
+
 if __name__ == "__main__":
     root = tkinter.Tk()
     # EntryPopup(root, "test").pack()

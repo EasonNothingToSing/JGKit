@@ -1,0 +1,10 @@
+{
+  "name": "Arcs-D0",
+  "core": "RV32",
+  "tif": ["JTAG"],
+  "JTAG": {"AP": [0, 0, 5, 1, 5], "CP": [5, 1, 0, 0, 5]},
+  "excel": "ARCS-D_SoC_Memory_Mapping.xlsx",
+  "sheets": [
+    "Peripheral AddrMapping"
+  ]
+}

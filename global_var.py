@@ -1,3 +1,4 @@
+import logging
 _global_dict = {}
 
 
@@ -13,5 +14,6 @@ def set_value(key, value):
 def get_value(key):
     try:
         return _global_dict[key]
-    except:
-        print("Error")
+    except KeyError as error:
+        logging.error("Global value error: %s" % (error, ))
+        return None

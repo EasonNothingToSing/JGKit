@@ -139,6 +139,32 @@ class Control:
         self.glimpse_file_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
         self.glimpse_file_button.configure(command=self.glimpse_file)
 
+        self.core_switch_value = None
+
+        try:
+            self.__core_radio_button_var = tkinter.StringVar()
+
+            self.core_radio_button_list = []
+
+            __core_list = global_var.get_value(global_var.get_value("tif")).keys()
+
+            for index, __core in enumerate(__core_list):
+                if index == 0:
+                    self.__core_radio_button_var.set(str(__core))
+                    self.core_switch_value = self.__core_radio_button_var.get()
+
+                self.core_radio_button_list.append(View.RadioButtonBase(self.control_button_frame,
+                                                                        tip_text="Choose Core %s" % (__core, ),
+                                                                        text=__core,
+                                                                        variable=self.__core_radio_button_var,
+                                                                        value=__core,
+                                                                        command=self.core_switch_radio_button_callback))
+
+            for __core in self.core_radio_button_list:
+                __core.pack(side=tkinter.RIGHT)
+        except AttributeError:
+            logging.debug("Core selector is none, and will not mount core viewer")
+
         # Tree Frame
         self.tree_frame = View.TreeFrame(self.master_frame)
         self.tree_frame.pack(expand=True, fill=tkinter.BOTH, after=self.control_frame)
@@ -262,10 +288,10 @@ class Control:
         )
 
         # SWD handler
-        self.swd_handler = None
+        self.link_handler = None
 
-        self._swd_connected_time = 100
-        self._swd_connected_handler = None
+        self._link_connected_time = 100
+        self._link_connected_handler = None
 
         self.display_device_render(self.device_generator())
 
@@ -431,6 +457,8 @@ class Control:
         self.mem_control_load_button.enable()
         self.mem_control_store_button.enable()
         self.mem_control_refresh_button.enable()
+        for __core in self.core_radio_button_list:
+            __core.disable()
 
     def disconnected(self):
         self.stage_label.disable()
@@ -447,6 +475,8 @@ class Control:
         self.mem_control_load_button.disable()
         self.mem_control_store_button.disable()
         self.mem_control_refresh_button.disable()
+        for __core in self.core_radio_button_list:
+            __core.enable()
 
     def control_button_stage_machine(func):
         @wraps(func)
@@ -506,7 +536,7 @@ class Control:
         chunk = self.mem_chunk_dir[self.memory.nametowidget(self.memory.select())]
         logging.info("<Mem><Refresh> Address -> %s - %s" % (hex(chunk["head_address"]), hex(chunk["tail_address"])))
         length = int((chunk["tail_address"] - chunk["head_address"])/4)
-        mem_list = self.swd_handler.read_mem(chunk["head_address"], length)
+        mem_list = self.link_handler.read_mem(chunk["head_address"], length)
 
         if len(mem_list) != len(chunk["value"]):
             logging.error("<MEM><Refresh> Prefetch length not equal current length")
@@ -570,18 +600,18 @@ class Control:
     def play(self):
         # Connect to target
         try:
-            self.swd_handler = SWDJlink.Link()
+            self.link_handler = SWDJlink.Link(self.core_switch_value)
         except:
-            self.swd_handler = None
+            self.link_handler = None
             return False
-        self._swd_connected_handler = self._master.after(self._swd_connected_time, self._swd_connected)
+        self._link_connected_handler = self._master.after(self._link_connected_time, self._swd_connected)
         return True
 
     @control_button_stage_machine
     def stop(self):
         # Disconnect to target
-        self._master.after_cancel(self._swd_connected_handler)
-        del self.swd_handler
+        self._master.after_cancel(self._link_connected_handler)
+        del self.link_handler
         return True
 
     @control_button_stage_machine
@@ -688,15 +718,15 @@ class Control:
         return mask.uint
 
     def _swd_connected(self):
-        if self.swd_handler.is_connected():
-            self._swd_connected_handler = self._master.after(self._swd_connected_time, self._swd_connected)
+        if self.link_handler.is_connected():
+            self._link_connected_handler = self._master.after(self._link_connected_time, self._swd_connected)
         else:
             self.stop()
 
     def write32_plus(self, tpl, data):
         if tpl[1] or tpl[2]:
             # Read address data
-            mem32 = self.swd_handler.read32(int(tpl[0], base=16))
+            mem32 = self.link_handler.read32(int(tpl[0], base=16))
             if mem32 == -1:
                 return False
             # Data & mask
@@ -714,17 +744,17 @@ class Control:
             mem32 |= data << int(tpl[1])
             # Write the word into memory
             logging.debug("Write to the memory: %s --> %d" % (tpl[0], mem32))
-            self.swd_handler.write32(int(tpl[0], base=16), mem32)
+            self.link_handler.write32(int(tpl[0], base=16), mem32)
         else:
             try:
                 data = int(data)
             except ValueError:
                 data = int(data, base=16)
 
-            self.swd_handler.write32(int(tpl[0], base=16), data)
+            self.link_handler.write32(int(tpl[0], base=16), data)
 
     def read32_plus(self, tpl):
-        mem32 = self.swd_handler.read32(int(tpl[0], base=16))
+        mem32 = self.link_handler.read32(int(tpl[0], base=16))
         if mem32 == -1:
             return False
         logging.debug("Read the whole register: %s" % (hex(mem32)))
@@ -872,7 +902,7 @@ class Control:
                 store_value.update({"next": []})
             else:
                 # Is a device
-                store_value["Values"] = hex(self.swd_handler.read32(int(store_value["Address"], base=16)))
+                store_value["Values"] = hex(self.link_handler.read32(int(store_value["Address"], base=16)))
 
             traverse_list.append(store_value)
 
@@ -1097,7 +1127,7 @@ class Control:
         cols = View.UI_MEM_ELEMENTS_ITEM_HORIZON_MAX
 
         start = time.time()
-        chunk["value"] = self.swd_handler.read_mem(address, rows * cols)  # Get word
+        chunk["value"] = self.link_handler.read_mem(address, rows * cols)  # Get word
         end = time.time()
         logging.debug("[TIME] Read memory cost %f" % (end - start))
 
@@ -1170,8 +1200,8 @@ class Control:
             value = int(value, base=16)
 
         logging.debug("[Event]<return> Address %s -> Value %d" % (hex(address), value))
-        self.swd_handler.write32(address, value)
-        new_value = int(self.swd_handler.read32(address))
+        self.link_handler.write32(address, value)
+        new_value = int(self.link_handler.read32(address))
 
         entry.delete(0, tkinter.END)
         entry.insert(0, hex(new_value))
@@ -1237,7 +1267,7 @@ class Control:
                 elif len(i) == 2:
                     u8_list.append(int(i, 16))
 
-            self.swd_handler.write_mem(address, u8_list, nbits=8)
+            self.link_handler.write_mem(address, u8_list, nbits=8)
 
             top.destroy()  # 关闭窗口
 
@@ -1388,7 +1418,7 @@ class Control:
             except ValueError:
                 length = int(length, base=16)
 
-            out_list = self.swd_handler.read_mem(start_address, length, nbits=8)
+            out_list = self.link_handler.read_mem(start_address, length, nbits=8)
 
             with open(export_file, mode="w", encoding="utf8") as f:
                 str_value = ""
@@ -1419,3 +1449,7 @@ class Control:
     def _mem_auto_refresh(self):
         self.mem_refresh()
         self.memory_refresh_handler = self.memory.after(self.memory_refresh_time, self._mem_auto_refresh)
+
+    def core_switch_radio_button_callback(self):
+        self.core_switch_value = self.__core_radio_button_var.get()
+        logging.debug("RadioButton switch to core: %s" % (self.core_switch_value, ))

@@ -52,12 +52,13 @@ def link_debug_class_decorater(cls):
 
 @link_debug_class_decorater
 class Link:
-    def __init__(self):
+    def __init__(self, core=None):
         self.link_handler = None
+        self.link_core = core
         if "FTDI" in global_var.get_value("tif"):
             self.link_handler = FTDILink()
         else:
-            self.link_handler = SWDJlink()
+            self.link_handler = SWDJlink(self.link_core)
 
     def __del__(self):
         self.link_handler.__del__()
@@ -136,7 +137,7 @@ class FTDILink:
 
 @link_debug_class_decorater
 class SWDJlink(pylink.JLink):
-    def __init__(self):
+    def __init__(self, core):
         self.__jlink_dll = pylink.library.Library("JLink_x64.dll")
         super(SWDJlink, self).__init__(lib=self.__jlink_dll)
         self.core = global_var.get_value("core")
@@ -147,6 +148,12 @@ class SWDJlink(pylink.JLink):
             self.set_tif(pylink.enums.JLinkInterfaces.SWD)
         elif global_var.get_value("tif") == "CJTAG":
             self.set_tif(7)
+        if core:
+            core_sight_list = global_var.get_value(global_var.get_value("tif"))[core]
+            self.coresight_configure(*core_sight_list)
+            logging.debug("Coresight configure:ir_pre=%d dr_pre=%d, ir_post=%d, dr_post=%d, ir_len=%d"
+                          % (core_sight_list[0], core_sight_list[1], core_sight_list[2],
+                             core_sight_list[3], core_sight_list[4]))
 
         self.connect(self.core, verbose=True)
         if self.connected():
