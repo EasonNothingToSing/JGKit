@@ -1,8 +1,8 @@
 {
-  "name": "Mars",
+  "name": "Apus",
   "core": "N308",
   "tif": ["JTAG", "CJTAG"],
-  "excel": "Mars_SoC_Memory_Mapping.xlsx",
+  "excel": "APUS-A_SoC_Memory_Mapping.xlsx",
   "sheets": [
     "PeriAddrMapping"
   ]
