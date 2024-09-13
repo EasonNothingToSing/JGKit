@@ -225,15 +225,23 @@ class SWDJlink(pylink.JLink):
 
 
 if __name__ == "__main__":
-    __jlink_dll = pylink.library.Library("JLink_x64.dll")
+    __jlink_dll = pylink.library.Library("../../JLink_x64.dll")
 
     jtag = pylink.JLink(lib=__jlink_dll)
     jtag.open()
     jtag.set_tif(pylink.enums.JLinkInterfaces.JTAG)
-    jtag.connect(chip_name="N308", verbose=True)
+    jtag.connect(chip_name="N208", verbose=True)
     print(jtag.core_id())
-
     print(jtag.device_family())
-
     print(jtag.connected()) # Ture
     print(jtag.target_connected()) # False
+
+    jtag.rtt_start(block_address=int('0x14a00', base=16))
+    while True:
+        cnt = jtag.rtt_get_num_up_buffers()
+        if cnt:
+            # print(cnt)
+            d_list = jtag.rtt_read(0, cnt)
+            if d_list:
+                print(d_list)
+

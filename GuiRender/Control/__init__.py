@@ -1228,6 +1228,7 @@ class Control:
         address_entry.grid(row=0, column=1, padx=10, pady=5)
 
         import_file = ""
+        file_format = ""
 
         # 添加 'Length' 标签和输入框
         file_label = ttk.Label(top, text="File")
@@ -1238,18 +1239,27 @@ class Control:
 
         def browse_button_callback():
             nonlocal import_file
-            addr = filedialog.askopenfilename(title="Import File", filetypes=[("Import raw file", "*.raw")],
+            nonlocal file_format
+            addr = filedialog.askopenfilename(title="Import File", filetypes=[("Import raw file", "*.raw"),
+                                                                              ("Import bin file", "*.bin"), ("", "*")],
                                               initialdir=r".")
             file_entry.delete(0, tkinter.END)
             file_entry.insert(0, addr)
-            with open(addr, mode="r", encoding="utf-8") as f:
-                import_file = f.read()
+            if addr.endswith(".bin"):
+                with open(addr, mode="rb", encoding="utf-8") as f:
+                    import_file = f.read()
+                    file_format = "bin"
+            else:
+                with open(addr, mode="r", encoding="utf-8") as f:
+                    import_file = f.read()
+                    file_format = "raw"
 
         file_button = tkinter.Button(top, text="Browse...", command=browse_button_callback)
         file_button.grid(row=0, column=4, padx=10, pady=5)
 
         def confirm_and_close():
             nonlocal import_file
+            nonlocal file_format
             """确认并关闭窗口的函数"""
             address = address_entry.get()  # 获取输入框中的地址
 
@@ -1258,7 +1268,12 @@ class Control:
             except ValueError:
                 address = int(address, base=16)
 
-            hex_file = import_file.replace("\n", "").split()
+            if file_format == "bin":
+                self.link_handler.write_mem(address, import_file)
+                top.destroy()  # 关闭窗口
+                return
+            else:
+                hex_file = import_file.replace("\n", "").split()
             u8_list = []
             for i in hex_file:
                 if len(i) == 4:
