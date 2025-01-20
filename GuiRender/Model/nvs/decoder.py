@@ -1,6 +1,7 @@
+import logging
+
 from exception import ParameterError
 from nvs import Nvs
-import copy
 
 
 class Decoder:
@@ -27,6 +28,15 @@ class Decoder:
         for sector in Nvs(data, self.sector_size):
             for ate in sector:
                 entry = ate.get_entry()
-                entries[entry.id] = copy.copy(entry.value)
+                entries[entry.id] = entry.value
+                logging.debug(f"{hex(entry.id)} add in entries list")
 
         return {id: data for id, data in entries.items() if data is not None}
+
+
+if __name__ == "__main__":
+    with open("./test_memory.bin", 'rb') as nvs_dump:
+        binary_content = nvs_dump.read()
+        content = Decoder(0x1000).load(binary_content)
+        for key, value in content.items():
+            print(key, [hex(i) for i in value])
