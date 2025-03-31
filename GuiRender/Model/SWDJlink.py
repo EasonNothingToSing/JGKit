@@ -140,20 +140,29 @@ class SWDJlink(pylink.JLink):
     def __init__(self, core):
         self.__jlink_dll = pylink.library.Library("JLink_x64.dll")
         super(SWDJlink, self).__init__(lib=self.__jlink_dll)
-        self.core = global_var.get_value("core")
+
+        self._dll.JLINKARM_ExecCommand.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int]
+        self._dll.JLINKARM_ExecCommand.restype = ctypes.c_int
+
+        cmd = b"JLinkDevicesXMLPath E:\\APP\\python_project\\JGKit\\JLinkDevices"
+        result = ctypes.create_string_buffer(256)
+        self._dll.JLINKARM_ExecCommand(cmd, result, 256)
+
+        # self._dll.JLINKARM_EXECUTE(f"JLinkDevicesXMLPath E:\APP\python_project\JGKit\JLinkDevices".encode('ascii'))
+        self.core = "Arcs"
         self.open()
-        if global_var.get_value("tif") == "JTAG":
-            self.set_tif(pylink.enums.JLinkInterfaces.JTAG)
-        elif global_var.get_value("tif") == "SWD":
-            self.set_tif(pylink.enums.JLinkInterfaces.SWD)
-        elif global_var.get_value("tif") == "CJTAG":
-            self.set_tif(7)
-        if core:
-            core_sight_list = global_var.get_value(global_var.get_value("tif"))[core]
-            self.coresight_configure(*core_sight_list)
-            logging.debug("Coresight configure:ir_pre=%d dr_pre=%d, ir_post=%d, dr_post=%d, ir_len=%d"
-                          % (core_sight_list[0], core_sight_list[1], core_sight_list[2],
-                             core_sight_list[3], core_sight_list[4]))
+        # if global_var.get_value("tif") == "JTAG":
+        #     self.set_tif(pylink.enums.JLinkInterfaces.JTAG)
+        # elif global_var.get_value("tif") == "SWD":
+        #     self.set_tif(pylink.enums.JLinkInterfaces.SWD)
+        # elif global_var.get_value("tif") == "CJTAG":
+        self.set_tif(7)
+        if True:
+            # core_sight_list = global_var.get_value(global_var.get_value("tif"))[core]
+            self.coresight_configure(*[0, 0, 5, 1, 5])
+            # logging.debug("Coresight configure:ir_pre=%d dr_pre=%d, ir_post=%d, dr_post=%d, ir_len=%d"
+            #               % (core_sight_list[0], core_sight_list[1], core_sight_list[2],
+            #                  core_sight_list[3], core_sight_list[4]))
 
         self.connect(self.core, verbose=True)
         if self.connected():
@@ -225,23 +234,39 @@ class SWDJlink(pylink.JLink):
 
 
 if __name__ == "__main__":
+    def load_custom_xml(self, xml_path):
+        self._dll.JLINKARM_ExecCommand.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int]
+        self._dll.JLINKARM_ExecCommand.restype = ctypes.c_int
+
+        cmd = b"JLinkDevicesXMLPath E:\\APP\\python_project\\JGKit\\JLinkDevices"
+        result = ctypes.create_string_buffer(256)
+        ret = self._dll.JLINKARM_ExecCommand(cmd, result, 256)
+        print(f"Result: {ret}")
+
+        # self._dll.JLINKARM_EXECUTE(f"JLinkDevicesXMLPath {xml_path}".encode('ascii'))
+
     __jlink_dll = pylink.library.Library("../../JLink_x64.dll")
 
     jtag = pylink.JLink(lib=__jlink_dll)
+    load_custom_xml(jtag, xml_path="E:\\APP\\python_project\\JGKit\\JLinkDevices")
     jtag.open()
     jtag.set_tif(pylink.enums.JLinkInterfaces.JTAG)
-    jtag.connect(chip_name="N208", verbose=True)
-    print(jtag.core_id())
-    print(jtag.device_family())
+    jtag.coresight_configure(*[0, 0, 5, 1, 5])
+    jtag.connect(chip_name="Arcs", verbose=True)
+    # print(jtag.core_id())
+    # print(jtag.device_family())
     print(jtag.connected()) # Ture
     print(jtag.target_connected()) # False
 
-    jtag.rtt_start(block_address=int('0x14a00', base=16))
     while True:
-        cnt = jtag.rtt_get_num_up_buffers()
-        if cnt:
-            # print(cnt)
-            d_list = jtag.rtt_read(0, cnt)
-            if d_list:
-                print(d_list)
+        pass
+
+    # jtag.rtt_start(block_address=int('0x14a00', base=16))
+    # while True:
+    #     cnt = jtag.rtt_get_num_up_buffers()
+    #     if cnt:
+    #         # print(cnt)
+    #         d_list = jtag.rtt_read(0, cnt)
+    #         if d_list:
+    #             print(d_list)
 
