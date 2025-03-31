@@ -332,6 +332,24 @@ class GlimpseFileButton(FlatButton):
         self.unbindable()
 
 
+class NvsViewerPopButton(FlatButton):
+    def __init__(self, master, **kwargs):
+        self.nvs_viewer_image = ImageTk.PhotoImage(
+            Image.open("./.image/.nvs/nvs_viewer.png").resize((16, 16), Image.LANCZOS))
+        self.nvs_viewer_dark_image = ImageTk.PhotoImage(
+            Image.open("./.image/.nvs/nvs_viewer_dark.png").resize((16, 16), Image.LANCZOS))
+        super(NvsViewerPopButton, self).__init__(master, image=self.nvs_viewer_dark_image, state=tkinter.DISABLED, **kwargs)
+        self.unbindable()
+
+    def enable(self):
+        self.configure(image=self.nvs_viewer_image, state=tkinter.NORMAL)
+        self.bindable()
+
+    def disable(self):
+        self.configure(image=self.nvs_viewer_dark_image, state=tkinter.DISABLED)
+        self.unbindable()
+
+
 class DarculaCheckButton(tkinter.Checkbutton):
     def __init__(self, master, **kwargs):
         # Get tip text and pop corresponding key from kwargs

@@ -139,6 +139,12 @@ class Control:
         self.glimpse_file_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
         self.glimpse_file_button.configure(command=self.glimpse_file)
 
+        self.nvs_viewer_pop_button = View.NvsViewerPopButton(self.control_button_frame,
+                                                             tip_text="Nvs viewer window,"
+                                                                      "Depending parameter of offset and size generate"
+                                                                      " NVS item viewer window")
+        self.nvs_viewer_pop_button.pack(side=tkinter.RIGHT, anchor="e", padx="4")
+
         self.core_switch_value = None
 
         try:

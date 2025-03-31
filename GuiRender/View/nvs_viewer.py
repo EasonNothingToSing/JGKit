@@ -29,6 +29,8 @@ class NvsViewer(tkinter.Toplevel):
         self.__content_frame.update_idletasks()
         self.__scroll_canvas.config(scrollregion=self.__scroll_canvas.bbox("all"))
 
+        self.__scroll_canvas.bind_all("<MouseWheel>", lambda event : self.__scroll_canvas.yview_scroll(int(-1*(event.delta/120)), "units"))
+
     def nvs_vender_content(self, nvs_dict: dict[int, bytes]):
         row = 0
         for __id, __values in nvs_dict.items():
@@ -48,6 +50,40 @@ class NvsViewer(tkinter.Toplevel):
         self.__scroll_canvas.config(scrollregion=self.__scroll_canvas.bbox("all"))
 
 
+class NvsHint(tkinter.Toplevel):
+
+    NVS_FRAME_TITLE = "NVS Viewer"
+
+    def __init__(self, master, **kwargs):
+        super(NvsHint, self).__init__(master)
+        self.title(NvsHint.NVS_FRAME_TITLE)
+        self.geometry("600x200")
+        # Address label
+        self.__address_label = tkinter.Label(self, text="Address:")
+        self.__address_label.pack(padx=5)
+        self.__address_entry = tkinter.Entry(self)
+        self.__address_entry.pack(padx=5)
+        # sector size label
+        self.__sec_size_label = tkinter.Label(self, text="sector size:")
+        self.__sec_size_label.pack(padx=5)
+        self.__sec_size_entry = tkinter.Entry(self)
+        self.__sec_size_entry.pack(padx=5)
+        # sector size label
+        self.__length_label = tkinter.Label(self, text="length:")
+        self.__length_label.pack(padx=5)
+        self.__length_entry = tkinter.Entry(self)
+        self.__length_entry.pack(padx=5)
+
+        self.__button = tkinter.Button(self, text="Launch", command=self.launch_nvs_viewer)
+        self.__button.pack(padx=10)
+
+    def launch_nvs_viewer(self):
+        NvsViewer(self.master, address=self.__address_entry.get(),
+                  sec_size=self.__sec_size_entry.get(),
+                  length=self.__length_entry.get())
+        self.destroy()
+
+
 if __name__ == "__main__":
     root = tkinter.Tk()
     root.title("主界面")
@@ -55,6 +91,7 @@ if __name__ == "__main__":
 
     def open_hex_window():
         nvs_viewer = NvsViewer(root)
+        NvsHint(root)
 
         data = {
             1: bytes([0x1A, 0x2B, 0x3C, 0x4D, 0x5E, 0x6F, 0x7A, 0x8B, 0x9C, 0xAF, 0x1A, 0x2B, 0x3C, 0x4D, 0x5E, 0x6F, 0x7A, 0x8B, 0x9C, 0xAF, 0x1A, 0x2B, 0x3C, 0x4D, 0x5E, 0x6F, 0x7A, 0x8B, 0x9C, 0xAF]),
@@ -81,3 +118,4 @@ if __name__ == "__main__":
 
     # 运行主窗口的 Tkinter 循环
     root.mainloop()
+
