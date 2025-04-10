@@ -1,8 +1,9 @@
 {
   "name": "Arcs-D0",
-  "core": "ARCS",
+  "core": "N308",
   "tif": ["JTAG", "CJTAG"],
   "JTAG": {"AP": [0, 0, 5, 1, 5], "CP": [5, 1, 0, 0, 5]},
+  "CJTAG": {"AP": [0, 0, 5, 1, 5], "CP": [5, 1, 0, 0, 5]},
   "excel": "ARCS-D_SoC_Memory_Mapping.xlsx",
   "sheets": [
     "Peripheral AddrMapping"
