@@ -1,11 +1,11 @@
 {
-  "name": "Arcs-D0",
-  "core": "arcs",
+  "name": "VenusA",
+  "core": "N308",
   "tif": ["JTAG", "CJTAG"],
   "JTAG": {"AP": [0, 0, 5, 1, 5], "CP": [5, 1, 0, 0, 5]},
   "CJTAG": {"AP": [0, 0, 5, 1, 5], "CP": [5, 1, 0, 0, 5]},
-  "excel": "ARCS-D_SoC_Memory_Mapping.xlsx",
+  "excel": "VenusA_SoC_Memory_Mapping.xlsx",
   "sheets": [
-    "Peripheral AddrMapping"
+    "cmn_aon_peri", "video_wrap_peri"
   ]
 }

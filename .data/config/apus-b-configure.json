@@ -1,0 +1,9 @@
+{
+  "name": "Apus-B",
+  "core": "UX900",
+  "tif": ["JTAG"],
+  "excel": "Apus-B_SoC_Memory_Mapping.xlsx",
+  "sheets": [
+    "PeriAddrMapping"
+  ]
+}
