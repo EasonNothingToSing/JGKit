@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "JGKit"
+version = "1.0.0"
+description = "Listen AI chip test toolkit"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Eason wang", email = "EasonRelease@outlook.com" },
+]
+dependencies = [
+    "Pillow",
+    "bitstring",
+    "crc",
+    "openpyxl",
+    "pandas",
+    "pygame",
+    "pygame-menu",
+    "pyelftools",
+    "pylink-square",
+    "xlrd",
+]
+
+[tool.setuptools]
+py-modules = ["global_var"]
+
+[tool.setuptools.packages.find]
+include = ["GuiRender*"]
