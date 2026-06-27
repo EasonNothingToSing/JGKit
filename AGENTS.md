@@ -4,8 +4,9 @@ This file helps coding agents work safely and efficiently in this repository.
 
 ## Scope
 
-- Python desktop toolkit using a two-stage GUI flow: pygame_menu bootstrap, then tkinter main UI.
-- Core app code is in GuiRender (MVC-style structure).
+- Python desktop toolkit with a Flet primary UI for startup chip/TIF selection and the main register/memory workspace.
+- Core app code is in GuiRender. The primary runtime UI lives in [GuiRender/FletUI](GuiRender/FletUI).
+- [GuiRender/Control](GuiRender/Control) and [GuiRender/View](GuiRender/View) are legacy UI modules and are not part of the main entry path.
 - The gpt directory appears to be auxiliary/experimental scripts, not the primary runtime path.
 
 ## Start Here
@@ -14,18 +15,21 @@ Read these first before making changes:
 
 1. [README.md](README.md)
 2. [main.py](main.py)
-3. [GuiRender/Control/__init__.py](GuiRender/Control/__init__.py)
-4. [GuiRender/View/__init__.py](GuiRender/View/__init__.py)
-5. [GuiRender/Model/StartUp_Verify.py](GuiRender/Model/StartUp_Verify.py)
-6. [GuiRender/Model/SWDJlink.py](GuiRender/Model/SWDJlink.py)
-7. [GuiRender/Model/ExcelReader.py](GuiRender/Model/ExcelReader.py)
-8. [JGKit.spec](JGKit.spec)
-9. [setup.py](setup.py)
+3. [GuiRender/FletUI/app.py](GuiRender/FletUI/app.py)
+4. [GuiRender/FletUI/services.py](GuiRender/FletUI/services.py)
+5. [GuiRender/FletUI/models.py](GuiRender/FletUI/models.py)
+6. [GuiRender/Model/StartUp_Verify.py](GuiRender/Model/StartUp_Verify.py)
+7. [GuiRender/Model/SWDJlink.py](GuiRender/Model/SWDJlink.py)
+8. [GuiRender/Model/ExcelReader.py](GuiRender/Model/ExcelReader.py)
+9. [JGKit.spec](JGKit.spec)
+10. [setup.py](setup.py)
 
 ## Common Commands
 
-- Install (editable): python -m pip install -e .
-- Run app: python main.py
+- Install/sync: uv sync
+- Run app: uv run python main.py
+- Run Flet module directly: uv run python -m GuiRender.FletUI
+- Run without target hardware: JGKIT_LINK_DEBUG=1 uv run python main.py
 - Package app:
   - pyinstaller -F main.py -n JGKit -i exchange.ico --windowed --onefile
   - or pyinstaller JGKit.spec
@@ -33,11 +37,11 @@ Read these first before making changes:
 ## Architecture Notes
 
 - Entry flow:
-  - [main.py](main.py) builds chip/TIF selection menu using pygame_menu.
-  - After selection, app switches to tkinter and constructs UI via GuiRender Control/View.
+  - [main.py](main.py) delegates to [GuiRender/FletUI](GuiRender/FletUI).
+  - Flet renders both the chip/TIF selection page and the main workspace.
 - Layer responsibilities:
-  - View: UI constants/widgets and image assets in [GuiRender/View](GuiRender/View).
-  - Control: event orchestration in [GuiRender/Control/__init__.py](GuiRender/Control/__init__.py).
+  - FletUI: UI state and controls in [GuiRender/FletUI/app.py](GuiRender/FletUI/app.py).
+  - FletUI services: startup config, Excel device tree generation, JLink access, register/config/memory services in [GuiRender/FletUI/services.py](GuiRender/FletUI/services.py).
   - Model: startup config, hardware/JLink, Excel/NVS processing in [GuiRender/Model](GuiRender/Model).
 - Shared runtime state uses [global_var.py](global_var.py). Preserve initialization order when refactoring startup.
 
@@ -46,17 +50,17 @@ Read these first before making changes:
 - Relative resource paths are assumed from repo root (examples: .data/config, .image/icon/exchange.png). Changes should keep runtime path behavior stable.
 - Packaging risk: [JGKit.spec](JGKit.spec) currently has empty datas; onefile packaging may miss runtime assets unless explicitly included.
 - Platform risk: hardware flow depends on DLLs (JLink and SWD listener) and is likely Windows-centric. Validate behavior before making cross-platform assumptions.
-- Dependency drift risk: code imports include pygame, pygame_menu, pandas, and openpyxl-related usage, but [setup.py](setup.py) lists only part of these dependencies.
+- Dependency drift risk: keep [pyproject.toml](pyproject.toml), [uv.lock](uv.lock), and [setup.py](setup.py) aligned.
 - Import-style risk in NVS package: some modules use non-relative imports in [GuiRender/Model/nvs](GuiRender/Model/nvs), which can break in package execution contexts.
 
 ## When Editing
 
 - Keep modifications scoped to one MVC layer when possible; if crossing layers, document why in the PR/commit message.
 - Prefer minimal diffs and avoid broad renames in gpt scripts unless the change explicitly targets that area.
-- If touching startup, menu, resource loading, or hardware I/O, run the GUI smoke check using python main.py.
+- If touching startup, menu, resource loading, or hardware I/O, run the GUI smoke check using `JGKIT_LINK_DEBUG=1 uv run python main.py`.
 
 ## Testing and Validation Reality
 
 - No repository-standard test command is defined.
 - No lint/format command is defined.
-- For now, validate by targeted runtime smoke checks and focused manual verification of affected flows.
+- For now, validate with `uv sync`, `uv pip check --python .venv/bin/python`, `uv run python -m compileall -q .`, targeted runtime smoke checks, and focused manual verification of affected flows.

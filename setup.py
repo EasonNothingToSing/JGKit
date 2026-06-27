@@ -17,12 +17,22 @@ DESCRIPTION = 'Listen AI chip test toolkit'
 URL = ''
 EMAIL = 'EasonRelease@outlook.com'
 AUTHOR = 'Eason wang'
-REQUIRES_PYTHON = '>=3.6.0'
+REQUIRES_PYTHON = '>=3.12.0'
 VERSION = '1.0.0'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'Pillow', 'pylink-square', 'bitstring', 'xlrd'
+    'Pillow',
+    'bitstring',
+    'crc',
+    'flet',
+    'flet-desktop',
+    'flet-web',
+    'openpyxl',
+    'pandas',
+    'pyelftools',
+    'pylink-square',
+    'xlrd',
 ]
 
 # What packages are optional?
