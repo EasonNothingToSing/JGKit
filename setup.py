@@ -25,12 +25,10 @@ REQUIRED = [
     'Pillow',
     'bitstring',
     'crc',
-    'flet',
-    'flet-desktop',
-    'flet-web',
     'openpyxl',
     'pandas',
     'pyelftools',
+    'pywebview',
     'pylink-square',
     'xlrd',
 ]

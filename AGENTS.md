@@ -4,8 +4,8 @@ This file helps coding agents work safely and efficiently in this repository.
 
 ## Scope
 
-- Python desktop toolkit with a Flet primary UI for startup chip/TIF selection and the main register/memory workspace.
-- Core app code is in GuiRender. The primary runtime UI lives in [GuiRender/FletUI](GuiRender/FletUI).
+- Python desktop toolkit with a PyWebView primary UI for startup chip/TIF selection and the main register/memory workspace.
+- Core app code is in GuiRender. The primary runtime UI lives in [GuiRender/WebViewUI](GuiRender/WebViewUI).
 - [GuiRender/Control](GuiRender/Control) and [GuiRender/View](GuiRender/View) are legacy UI modules and are not part of the main entry path.
 - The gpt directory appears to be auxiliary/experimental scripts, not the primary runtime path.
 
@@ -15,9 +15,9 @@ Read these first before making changes:
 
 1. [README.md](README.md)
 2. [main.py](main.py)
-3. [GuiRender/FletUI/app.py](GuiRender/FletUI/app.py)
-4. [GuiRender/FletUI/services.py](GuiRender/FletUI/services.py)
-5. [GuiRender/FletUI/models.py](GuiRender/FletUI/models.py)
+3. [GuiRender/WebViewUI/app.py](GuiRender/WebViewUI/app.py)
+4. [GuiRender/WebViewUI/api.py](GuiRender/WebViewUI/api.py)
+5. [GuiRender/WebViewUI/view.py](GuiRender/WebViewUI/view.py)
 6. [GuiRender/Model/StartUp_Verify.py](GuiRender/Model/StartUp_Verify.py)
 7. [GuiRender/Model/SWDJlink.py](GuiRender/Model/SWDJlink.py)
 8. [GuiRender/Model/ExcelReader.py](GuiRender/Model/ExcelReader.py)
@@ -28,7 +28,7 @@ Read these first before making changes:
 
 - Install/sync: uv sync
 - Run app: uv run python main.py
-- Run Flet module directly: uv run python -m GuiRender.FletUI
+- Run PyWebView module directly: uv run python -m GuiRender.WebViewUI
 - Run without target hardware: JGKIT_LINK_DEBUG=1 uv run python main.py
 - Package app:
   - pyinstaller -F main.py -n JGKit -i exchange.ico --windowed --onefile
@@ -37,11 +37,11 @@ Read these first before making changes:
 ## Architecture Notes
 
 - Entry flow:
-  - [main.py](main.py) delegates to [GuiRender/FletUI](GuiRender/FletUI).
-  - Flet renders both the chip/TIF selection page and the main workspace.
+  - [main.py](main.py) delegates to [GuiRender/WebViewUI](GuiRender/WebViewUI).
+  - PyWebView renders both the chip/TIF selection page and the main workspace.
 - Layer responsibilities:
-  - FletUI: UI state and controls in [GuiRender/FletUI/app.py](GuiRender/FletUI/app.py).
-  - FletUI services: startup config, Excel device tree generation, JLink access, register/config/memory services in [GuiRender/FletUI/services.py](GuiRender/FletUI/services.py).
+  - WebViewUI: PyWebView window setup in [GuiRender/WebViewUI/app.py](GuiRender/WebViewUI/app.py), Python bridge methods in [GuiRender/WebViewUI/api.py](GuiRender/WebViewUI/api.py), and local HTML/CSS/JS in [GuiRender/WebViewUI/view.py](GuiRender/WebViewUI/view.py).
+  - AppCore: shared startup config, Excel device tree generation, JLink access, register/config/memory services in [GuiRender/AppCore](GuiRender/AppCore).
   - Model: startup config, hardware/JLink, Excel/NVS processing in [GuiRender/Model](GuiRender/Model).
 - Shared runtime state uses [global_var.py](global_var.py). Preserve initialization order when refactoring startup.
 

@@ -1,4 +1,4 @@
-"""Flet-based UI for JGKit."""
+"""PyWebView-based UI for JGKit."""
 
 from .app import run
 
