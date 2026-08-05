@@ -417,11 +417,15 @@ class MemoryService:
         return tab
 
     def shift_tab(self, tab: MemoryTabState, byte_delta: int, columns: int = 4) -> MemoryTabState:
+        block_size = tab.tail_address - tab.head_address
         next_head = tab.head_address + byte_delta
         next_tail = tab.tail_address + byte_delta
         if next_head < 0:
             next_head = 0
-            next_tail = tab.tail_address - tab.head_address
+            next_tail = block_size
+        if next_tail > 0x100000000:
+            next_tail = 0x100000000
+            next_head = next_tail - block_size
         tab.head_address = next_head
         tab.tail_address = next_tail
         return self.refresh_tab(tab, columns=columns)

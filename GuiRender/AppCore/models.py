@@ -56,6 +56,7 @@ class RegisterItem:
     level: int = 1
     write_value: str = "NA"
     read_value: str = "NA"
+    pending: bool = False
     children: list["RegisterItem"] = field(default_factory=list)
 
 
@@ -94,5 +95,6 @@ def clone_register_item(item: RegisterItem) -> RegisterItem:
         level=item.level,
         write_value=item.write_value,
         read_value=item.read_value,
+        pending=item.pending,
         children=[clone_register_item(child) for child in item.children],
     )

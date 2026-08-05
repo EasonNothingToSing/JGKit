@@ -51,7 +51,7 @@ class JGKitApi:
             return self._ok(self._state())
         except Exception as exc:
             logging.exception("Startup failed")
-            return self._fail(f"Failed to load startup config: {exc}")
+            return self._fail(f"Failed to load startup config: {exc}", state=True)
 
     def launch(self, chip_name: str, tif: str) -> dict[str, Any]:
         try:
@@ -127,6 +127,11 @@ class JGKitApi:
             if not self.connected:
                 return self._fail("Connect before adding items to Modify Tree.", state=True)
             item = self._get_source_item(source_path)
+            if any(
+                existing.name == item.name and existing.address_expr == item.address_expr
+                for existing in self._iter_modify_items()
+            ):
+                return self._fail(f"{item.name} is already tracked.", state=True)
             cloned = clone_items([item])[0]
             self._refresh_item_tree(cloned)
             self.modify_items.append(cloned)
@@ -146,10 +151,17 @@ class JGKitApi:
     def set_write_value(self, path: list[int], value: str) -> dict[str, Any]:
         try:
             item = self._get_modify_item(path)
-            item.write_value = value if value else "NA"
-            return self._ok({"updated": True})
+            text = value.strip()
+            if not text:
+                item.write_value = "NA"
+                item.pending = False
+            else:
+                self._validate_write_value(item, text)
+                item.write_value = text
+                item.pending = not self._values_match(text, item.read_value)
+            return self._ok(self._state())
         except Exception as exc:
-            return self._fail(f"Update failed: {exc}")
+            return self._fail(f"Invalid write value: {exc}", state=True)
 
     def read_item(self, path: list[int]) -> dict[str, Any]:
         try:
@@ -163,7 +175,12 @@ class JGKitApi:
         try:
             item = self._get_modify_item(path)
             if value is not None:
-                item.write_value = value if value else "NA"
+                text = value.strip()
+                if not text:
+                    raise ValueError("Enter a value before writing")
+                self._validate_write_value(item, text)
+                item.write_value = text
+                item.pending = True
             self._write_item(item)
             return self._ok(self._state())
         except Exception as exc:
@@ -174,6 +191,7 @@ class JGKitApi:
             for item in self._iter_modify_items():
                 if item.level != 0:
                     item.read_value = format_hex(self._register_service.read32_plus(item.address_expr))
+                    self._update_pending(item)
             self._log("Modify tree refreshed")
             return self._ok(self._state())
         except Exception as exc:
@@ -181,14 +199,27 @@ class JGKitApi:
 
     def upload_modify(self) -> dict[str, Any]:
         try:
-            for item in self._iter_modify_items():
-                if item.level != 0 and item.write_value not in {"", "NA"}:
-                    self._register_service.write32_plus(item.address_expr, item.write_value)
-                    item.read_value = format_hex(self._register_service.read32_plus(item.address_expr))
-            self._log("Upload complete")
+            pending = [item for item in self._iter_modify_items() if item.pending]
+            if not pending:
+                return self._fail("There are no pending changes.", state=True)
+            written = 0
+            for item in pending:
+                self._write_item(item)
+                written += 1
+            self._log(f"Applied {written} pending change{'s' if written != 1 else ''}")
             return self._ok(self._state())
         except Exception as exc:
-            return self._fail(f"Upload failed: {exc}", state=True)
+            return self._fail(f"Apply failed: {exc}", state=True)
+
+    def discard_pending(self) -> dict[str, Any]:
+        discarded = 0
+        for item in self._iter_modify_items():
+            if item.pending:
+                item.write_value = "NA"
+                item.pending = False
+                discarded += 1
+        self._log(f"Discarded {discarded} pending change{'s' if discarded != 1 else ''}")
+        return self._ok(self._state())
 
     def refresh_all(self) -> dict[str, Any]:
         try:
@@ -196,6 +227,7 @@ class JGKitApi:
                 for item in self._iter_modify_items():
                     if item.level != 0:
                         item.read_value = format_hex(self._register_service.read32_plus(item.address_expr))
+                        self._update_pending(item)
                 for tab in self.memory_tabs:
                     self._memory_service.refresh_tab(tab)
             return self._ok(self._state())
@@ -210,10 +242,15 @@ class JGKitApi:
             self.modify_items = self._config_file_service.read_regcfg(path)
             if self.connected:
                 for item in self._iter_modify_items():
-                    if item.level != 0 and item.write_value not in {"", "NA"}:
-                        self._register_service.write32_plus(item.address_expr, item.write_value)
-                self.refresh_modify()
-            self._log(f"Opened {path}")
+                    if item.level != 0:
+                        item.read_value = format_hex(self._register_service.read32_plus(item.address_expr))
+            staged = 0
+            for item in self._iter_modify_items():
+                item.pending = item.level != 0 and item.write_value not in {"", "NA"} and (
+                    not self.connected or not self._values_match(item.write_value, item.read_value)
+                )
+                staged += int(item.pending)
+            self._log(f"Opened {path}; staged {staged} change{'s' if staged != 1 else ''}")
             return self._ok(self._state())
         except Exception as exc:
             return self._fail(f"Open failed: {exc}", state=True)
@@ -242,7 +279,8 @@ class JGKitApi:
 
     def add_memory(self, address: str) -> dict[str, Any]:
         try:
-            tab = self._memory_service.create_tab(parse_number(address))
+            target = self._parse_memory_address(address, aligned=True)
+            tab = self._memory_service.create_tab(target)
             self.memory_tabs.append(tab)
             self.memory_index = len(self.memory_tabs) - 1
             self._log(f"Added memory tab {tab.name}")
@@ -294,7 +332,10 @@ class JGKitApi:
         try:
             tab = self._get_memory_tab(index)
             address = tab.head_address + int(value_index) * 4
-            self._memory_service.write_word(address, value)
+            number = parse_number(value)
+            if number < 0 or number > 0xFFFFFFFF:
+                raise ValueError("value must fit in 32 bits")
+            self._memory_service.write_word(address, number)
             self._memory_service.refresh_tab(tab)
             return self._ok(self._state())
         except Exception as exc:
@@ -306,7 +347,7 @@ class JGKitApi:
             path = self._pick_open_file(("Memory files (*.raw;*.bin)", "All files (*.*)"))
             if not path:
                 return self._ok(self._state())
-            target = parse_number(address) if address else tab.head_address
+            target = self._parse_memory_address(address) if address else tab.head_address
             self._memory_service.import_raw_or_bin(target, path)
             self._memory_service.refresh_tab(tab)
             self._log(f"Imported {path}")
@@ -317,10 +358,16 @@ class JGKitApi:
     def export_memory(self, index: int, start: str, length: str) -> dict[str, Any]:
         try:
             tab = self._get_memory_tab(index)
+            start_address = self._parse_memory_address(start)
+            byte_length = parse_number(length)
+            if byte_length <= 0:
+                raise ValueError("length must be greater than zero")
+            if start_address + byte_length > 0x100000000:
+                raise ValueError("range exceeds 32-bit address space")
             path = self._pick_save_file(f"{tab.name.replace('0x', '')}.raw", ("Raw memory (*.raw)",))
             if not path:
                 return self._ok(self._state())
-            self._memory_service.export_raw(parse_number(start), parse_number(length), path)
+            self._memory_service.export_raw(start_address, byte_length, path)
             self._log(f"Exported {path}")
             return self._ok(self._state())
         except Exception as exc:
@@ -385,9 +432,19 @@ class JGKitApi:
             index = self.memory_index
         return self.memory_tabs[int(index)]
 
+    @staticmethod
+    def _parse_memory_address(value: str, aligned: bool = False) -> int:
+        address = parse_number(value)
+        if address < 0 or address > 0xFFFFFFFF:
+            raise ValueError("address must fit in 32 bits")
+        if aligned and address % 4:
+            raise ValueError("address must be 4-byte aligned")
+        return address
+
     def _refresh_item_tree(self, item: RegisterItem) -> None:
         if item.level != 0:
             item.read_value = format_hex(self._register_service.read32_plus(item.address_expr))
+            self._update_pending(item)
         for child in item.children:
             self._refresh_item_tree(child)
 
@@ -395,9 +452,39 @@ class JGKitApi:
         if item.write_value in {"", "NA"}:
             self._log(f"Skip {item.name}: write value is empty")
             return
-        self._register_service.write32_plus(item.address_expr, item.write_value)
+        self._validate_write_value(item, item.write_value)
+        if not self._register_service.write32_plus(item.address_expr, item.write_value):
+            raise RuntimeError(f"Hardware rejected write to {item.address_expr}")
         item.read_value = format_hex(self._register_service.read32_plus(item.address_expr))
+        if not self._values_match(item.write_value, item.read_value):
+            raise RuntimeError(
+                f"Verification failed for {item.name}: expected {item.write_value}, read {item.read_value}"
+            )
+        item.pending = False
         self._log(f"Wrote {item.name} = {item.write_value}")
+
+    def _validate_write_value(self, item: RegisterItem, value: str) -> None:
+        if item.level == 0:
+            raise ValueError("Device groups cannot be written")
+        if item.level > 1 and "W" not in item.property.upper():
+            raise ValueError(f"{item.name} is {item.property or 'read-only'}")
+        number = parse_number(value)
+        _, field0, field1 = self._register_service.parse_address(item.address_expr)
+        width = int(field1) - int(field0) + 1 if field0 is not None and field1 is not None else 32
+        if number < 0 or number >= (1 << width):
+            raise ValueError(f"value must fit in {width} bits")
+
+    @staticmethod
+    def _values_match(left: str, right: str) -> bool:
+        try:
+            return parse_number(left) == parse_number(right)
+        except (TypeError, ValueError):
+            return False
+
+    def _update_pending(self, item: RegisterItem) -> None:
+        item.pending = item.write_value not in {"", "NA"} and not self._values_match(
+            item.write_value, item.read_value
+        )
 
     def _iter_modify_items(self) -> list[RegisterItem]:
         items: list[RegisterItem] = []
@@ -463,6 +550,7 @@ class JGKitApi:
             "level": item.level,
             "writeValue": item.write_value,
             "readValue": item.read_value,
+            "pending": item.pending,
             "children": [self._register_to_dict(child) for child in item.children],
         }
 
