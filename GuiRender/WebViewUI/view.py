@@ -894,7 +894,11 @@ HTML = r"""<!doctype html>
       return `<div class="modal-backdrop" onclick="if(event.target===this)closeModal()"><form class="modal" role="dialog" aria-modal="true" onsubmit="submitModal(event)"><div class="modal-head"><span class="modal-title">${esc(title)}</span>${close}</div><div class="modal-body"><p class="modal-copy">${esc(copy)}</p>${fields.map((field) => `<div class="field"><label for="modal-${field.id}">${esc(field.label)}</label><input id="modal-${field.id}" name="${field.id}" value="${esc(field.value)}" autocomplete="off"></div>`).join("")}<div id="modalError" class="form-error"></div></div><div class="modal-actions"><button type="button" class="button" onclick="closeModal()">Cancel</button><button type="submit" class="button ${destructive ? "danger" : "primary"}">${modal.kind === "removeMemory" ? icon("trash") : (modal.kind === "disconnect" ? icon("plug") : "")}${esc(action)}</button></div></form></div>`;
     }
 
-    function openModal(kind) { modal = {kind}; renderWorkspace(); }
+    function openModal(kind) {
+      modal = {kind};
+      $("modalRoot").innerHTML = renderModal();
+      requestAnimationFrame(() => document.querySelector(".modal input")?.focus());
+    }
     function closeModal() { modal = null; $("modalRoot").innerHTML = ""; }
 
     function submitModal(event) {
@@ -971,8 +975,13 @@ HTML = r"""<!doctype html>
       const item = getModify(path);
       const text = String(value || "").trim();
       if (text && !isValidNumber(text)) {
+        const input = document.querySelector(`[data-row-path="${pathKey(path)}"] .value-input`);
+        if (input) {
+          input.value = item.writeValue === "NA" ? "" : item.writeValue;
+          input.classList.add("invalid");
+          setTimeout(() => input.classList.remove("invalid"), 1600);
+        }
         showToast("Target value must be a decimal or hexadecimal number.");
-        renderWorkspace();
         return;
       }
       item.writeValue = text || "NA";
@@ -980,7 +989,7 @@ HTML = r"""<!doctype html>
       const data = await invoke("set_write_value", [path, text], {renderState:false, busy:false});
       if (data) {
         state = data;
-        renderWorkspace();
+        patchLiveValues();
       }
     }
 
@@ -1073,9 +1082,17 @@ HTML = r"""<!doctype html>
 
     function captureScroll() {
       const ids = ["deviceTree", "registerScroll", "memoryScroll", "consoleLines", "inspectorBody"];
-      return Object.fromEntries(ids.map((id) => [id, $(id)?.scrollTop || 0]));
+      return Object.fromEntries(ids.map((id) => {
+        const element = $(id);
+        return [id, element ? {top: element.scrollTop, left: element.scrollLeft} : null];
+      }));
     }
-    function restoreScroll(snapshot) { Object.entries(snapshot || {}).forEach(([id, top]) => { if ($(id)) $(id).scrollTop = top; }); }
+    function restoreScroll(snapshot) {
+      Object.entries(snapshot || {}).forEach(([id, position]) => {
+        const element = $(id);
+        if (element && position) element.scrollTo(position.left, position.top);
+      });
+    }
     function isValidNumber(value) { return /^(?:0x[0-9a-f]+|\d+)$/i.test(String(value).trim()); }
     function cleanDescription(value) { const text = String(value || "").trim(); return !text || text.toLowerCase() === "nan" ? "No description is available for this item." : text; }
     function copyText(value, message = "Address copied") { navigator.clipboard?.writeText(value).then(() => showToast(message, "success")).catch(() => showToast("Unable to access the clipboard.")); }
